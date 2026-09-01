@@ -186,7 +186,9 @@ namespace ChalkMaze
             // 첫 화면이 할 일은 설명이 아니라 분위기를 세우고 비켜 주는 것이다.
             string body =
                 "지나온 길은 다시 어두워진다.\n" +
-                "남는 건 벽에 그은 <color=#E8E3D6>분필 자국</color>뿐.";
+                "남는 건 벽에 그은 <color=#E8E3D6>분필 자국</color>뿐.\n\n" +
+                // 누르는 조작은 보고 알 수 없다. 한 줄로 알려준다.
+                "<color=#6E6875>가고 싶은 쪽을 누르세요. 누르고 있으면 계속 갑니다.</color>";
 
             var choices = new System.Collections.Generic.List<Overlay.Choice>();
             if (_resumeLevel > 1)

@@ -72,13 +72,15 @@ namespace ChalkMaze
                 new GameObject("AdManager", typeof(AdManager));
 
             // ── 컨트롤러 ──
-            var gcGo = new GameObject("GameController", typeof(GameController), typeof(SwipeInput));
+            var gcGo = new GameObject("GameController", typeof(GameController), typeof(TouchSteer));
             var gc = gcGo.GetComponent<GameController>();
             gc.Mesh = mesh; gc.Glyphs = glyphs; gc.Rig = rig;
             gc.TorchFx = torch; gc.Hud = hud; gc.Overlay = overlay;
 
-            var swipe = gcGo.GetComponent<SwipeInput>();
-            swipe.OnSwipe += d => gc.TryMove(d);
+            var steer = gcGo.GetComponent<TouchSteer>();
+            steer.Cam = cam;
+            steer.Player = glyphs.PlayerT;
+            steer.OnMove += d => gc.TryMove(d);
 
             // 개발용 자동 촬영 — 환경변수 CM_SHOT_DIR 이 있을 때만.
             // 실행 인자는 플레이어까지 안 넘어오는 경우가 있어 환경변수를 쓴다.
