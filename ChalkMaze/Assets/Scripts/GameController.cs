@@ -168,17 +168,17 @@ namespace ChalkMaze
 
         void ShowIntro(int streak, string reward)
         {
+            // 규칙을 늘어놓지 않는다. 분필도 화톳불도 HUD 와 토스트가 알려준다.
+            // 첫 화면이 할 일은 설명이 아니라 분위기를 세우고 비켜 주는 것이다.
             string body =
-                "횃불은 <color=#E8E3D6>정해진 걸음 수</color>만큼만 탑니다. 지나온 길은 다시 어두워지고,\n" +
-                "남는 건 <color=#E8E3D6>분필 자국과 화톳불</color>뿐입니다.\n\n" +
-                "<color=#F2A33C>화톳불</color> — 밝히면 여기서 부활하고 횃불이 가득 찹니다. 어둠 너머에서도 보입니다.\n" +
-                $"<color=#7C7490>{LevelConfig.ItemsFromLevel}층부터 아이템, {LevelConfig.PitsFromLevel}층부터 구덩이가 나옵니다.</color>";
+                "지나온 길은 다시 어두워진다.\n" +
+                "남는 건 벽에 그은 <color=#E8E3D6>분필 자국</color>뿐.";
 
             var choices = new System.Collections.Generic.List<Overlay.Choice>();
             if (_resumeLevel > 1)
                 choices.Add(new Overlay.Choice
                 {
-                    Label = $"{_resumeLevel}층부터 이어하기 · {LevelConfig.ChapterOf(_resumeLevel)}",
+                    Label = $"{_resumeLevel}층부터 이어하기",
                     Primary = true,
                     OnPick = () => LoadLevel(_resumeLevel)
                 });
@@ -188,10 +188,26 @@ namespace ChalkMaze
                 Primary = _resumeLevel <= 1,
                 OnPick = () => { LoadLevel(1); RefreshAll(); }
             });
+            choices.Add(new Overlay.Choice { Label = "규칙", OnPick = ShowRules });
 
             Overlay.Show($"전 {LevelConfig.FinalLevel}층", "분필 <color=#FF7A3D>미로</color>", body,
                 $"<color=#6E6875>연속 출석 {streak}일 · {reward}</color>",
                 choices.ToArray());
+        }
+
+        /// 규칙은 원하는 사람만 본다. 강제로 읽히지 않는다.
+        void ShowRules()
+        {
+            string body =
+                "<color=#F2A33C>화톳불</color>  밝히면 여기서 부활한다. 횃불도 가득 찬다.\n" +
+                "어둠 너머에서도 보인다.\n\n" +
+                "<color=#E8E3D6>분필</color>  층마다 몇 자루뿐. 다시 밟으면 회수해 옮길 수 있다.\n\n" +
+                "<color=#E8E3D6>횃불</color>  정해진 걸음 수만큼만 탄다. 꺼져도 분필 자국은 남는다.\n\n" +
+                $"<color=#6E6875>{LevelConfig.ItemsFromLevel}층부터 아이템, {LevelConfig.PitsFromLevel}층부터 구덩이.</color>";
+
+            Overlay.Show("규칙", "기억할 수는 <color=#FF7A3D>없다</color>", body, "",
+                new Overlay.Choice { Label = "돌아가기", Primary = true,
+                                     OnPick = () => ShowIntro(PlayerProfile.Streak, "") });
         }
 
         void ShowDead()

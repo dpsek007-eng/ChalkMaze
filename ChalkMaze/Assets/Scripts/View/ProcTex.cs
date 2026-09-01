@@ -121,21 +121,24 @@ namespace ChalkMaze
             return Make(t);
         }
 
-        /// 분필 화살표 (위를 가리킴 — 회전은 트랜스폼으로)
+        /// 분필 화살표 — 위를 가리킨다. 회전은 트랜스폼이 맡는다.
+        /// 텍스처 좌표는 y 가 위로 증가한다. 촉이 위(큰 y), 자루가 아래(작은 y).
         public static Sprite ArrowMark()
         {
             var t = Blank(S);
             float cx = S / 2f;
-            // 삼각 촉
-            for (int y = 30; y <= 52; y++)
+
+            // 촉 : y=54 에서 한 점, 아래로 내려오며 넓어진다
+            for (int y = 34; y <= 54; y++)
             {
-                float u = (y - 30) / 22f;
-                float half = Mathf.Lerp(0f, 15f, u);
+                float u = (54 - y) / 20f;
+                float half = Mathf.Lerp(0f, 16f, u);
                 for (int x = 0; x < S; x++)
                     if (Mathf.Abs(x - cx) <= half) Plot(t, x, y, 1f);
             }
-            // 자루
-            Line(t, cx, 30f, cx, 12f, 3.4f);
+
+            // 자루 : 촉 아래로
+            Line(t, cx, 40f, cx, 12f, 4f);
             return Make(t);
         }
 

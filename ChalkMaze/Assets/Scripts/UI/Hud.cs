@@ -21,6 +21,7 @@ namespace ChalkMaze
             = new Dictionary<ItemKind, (RectTransform, Text)>();
 
         Button _mkArrow, _mkCross;
+        Sprite _dirArrow;
         float _toastUntil;
 
         public void Build(Transform canvas)
@@ -71,12 +72,13 @@ namespace ChalkMaze
             UIKit.At(_itemRow, new Vector2(0, 0), new Vector2(1, 0), new Vector2(36, 396), new Vector2(-36, 494));
 
             // ── 하단 조작 ──
+            _dirArrow = ProcTex.ArrowMark();
             var pad = UIKit.Empty(canvas, "Dpad");
-            UIKit.At(pad, new Vector2(0, 0), new Vector2(0, 0), new Vector2(40, 70), new Vector2(340, 370));
-            MakeDirBtn(pad, "▲", 0, new Vector2(0.34f, 0.67f), new Vector2(0.66f, 1f));
-            MakeDirBtn(pad, "◀", 3, new Vector2(0.02f, 0.34f), new Vector2(0.34f, 0.66f));
-            MakeDirBtn(pad, "▶", 1, new Vector2(0.66f, 0.34f), new Vector2(0.98f, 0.66f));
-            MakeDirBtn(pad, "▼", 2, new Vector2(0.34f, 0f),    new Vector2(0.66f, 0.33f));
+            UIKit.At(pad, new Vector2(0, 0), new Vector2(0, 0), new Vector2(30, 60), new Vector2(350, 380));
+            MakeDirBtn(pad, 0, new Vector2(0.33f, 0.66f), new Vector2(0.67f, 1f),    0f);
+            MakeDirBtn(pad, 3, new Vector2(0f,    0.33f), new Vector2(0.34f, 0.67f), 90f);
+            MakeDirBtn(pad, 1, new Vector2(0.66f, 0.33f), new Vector2(1f,    0.67f), -90f);
+            MakeDirBtn(pad, 2, new Vector2(0.33f, 0f),    new Vector2(0.67f, 0.34f), 180f);
 
             var marks = UIKit.Empty(canvas, "Marks");
             UIKit.At(marks, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-340, 90), new Vector2(-40, 330));
@@ -87,14 +89,34 @@ namespace ChalkMaze
                                    new Vector2(0, 0f), new Vector2(1, 0.46f));
         }
 
-        void MakeDirBtn(Transform parent, string glyph, int dir, Vector2 aMin, Vector2 aMax)
+        /// 방향키는 UI 박스가 아니라 분필로 그은 화살표다.
+        /// 게임 안의 분필 자국과 같은 스프라이트를 써서 화면이 한 세계로 읽히게 한다.
+        /// 터치 영역은 보이는 것보다 넓다 — 작은 화면에서 오조작이 나지 않도록.
+        void MakeDirBtn(Transform parent, int dir, Vector2 aMin, Vector2 aMax, float rotDeg)
         {
-            var b = UIKit.Btn(parent, glyph, 34, Palette.Ash,
-                              new Color(Palette.StoneLit.r, Palette.StoneLit.g, Palette.StoneLit.b, 0.55f),
-                              () => OnDir?.Invoke(dir));
-            UIKit.At(b.GetComponent<RectTransform>(), aMin, aMax, Vector2.zero, Vector2.zero);
-            var rep = b.gameObject.AddComponent<HoldRepeat>();
+            // 투명한 넓은 터치 영역
+            var hit = UIKit.Panel(parent, "dir", new Color(0, 0, 0, 0.001f));
+            UIKit.At(hit, aMin, aMax, Vector2.zero, Vector2.zero);
+            var b = hit.gameObject.AddComponent<Button>();
+            b.targetGraphic = hit.GetComponent<Image>();
+            b.transition = Selectable.Transition.None;
+            b.onClick.AddListener(() => OnDir?.Invoke(dir));
+
+            // 그 안에 화살표
+            var go = new GameObject("arrow", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            go.transform.SetParent(hit, false);
+            var img = go.GetComponent<Image>();
+            img.sprite = _dirArrow;
+            img.color = new Color(Palette.Chalk.r, Palette.Chalk.g, Palette.Chalk.b, 0.42f);
+            img.raycastTarget = false;
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.5f, 0.5f); rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(96, 96);
+            rt.localRotation = Quaternion.Euler(0, 0, rotDeg);
+
+            var rep = hit.gameObject.AddComponent<HoldRepeat>();
             rep.Action = () => OnDir?.Invoke(dir);
+            rep.Flash = img;
         }
 
         Button MakeMarkBtn(Transform parent, string txt, MarkKind kind, Vector2 aMin, Vector2 aMax)
@@ -219,12 +241,17 @@ namespace ChalkMaze
         UnityEngine.EventSystems.IPointerExitHandler
     {
         public Action Action;
+        public Image Flash;                 // 눌렀을 때 밝아지는 화살표
         bool _held; float _next;
         const float Delay = 0.28f, Rate = 0.135f;
+        static readonly Color Idle = new Color(0.91f, 0.89f, 0.84f, 0.42f);
+        static readonly Color Lit  = new Color(1f, 0.48f, 0.24f, 1f);
 
-        public void OnPointerDown(UnityEngine.EventSystems.PointerEventData e) { _held = true; _next = Time.time + Delay; }
-        public void OnPointerUp(UnityEngine.EventSystems.PointerEventData e)   { _held = false; }
-        public void OnPointerExit(UnityEngine.EventSystems.PointerEventData e) { _held = false; }
+        void Glow(bool on) { if (Flash != null) Flash.color = on ? Lit : Idle; }
+
+        public void OnPointerDown(UnityEngine.EventSystems.PointerEventData e) { _held = true; _next = Time.time + Delay; Glow(true); }
+        public void OnPointerUp(UnityEngine.EventSystems.PointerEventData e)   { _held = false; Glow(false); }
+        public void OnPointerExit(UnityEngine.EventSystems.PointerEventData e) { _held = false; Glow(false); }
 
         void Update()
         {
