@@ -61,6 +61,9 @@ namespace ChalkMaze
             var overlay = canvasGo.AddComponent<Overlay>();
             overlay.Build(canvasGo.transform);
 
+            // ── 소리 ──
+            if (Sfx.I == null) new GameObject("Sfx", typeof(Sfx));
+
             // ── 광고 ──
             if (AdManager.I == null)
                 new GameObject("AdManager", typeof(AdManager));

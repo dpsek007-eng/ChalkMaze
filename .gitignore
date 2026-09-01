@@ -69,3 +69,6 @@ compare.png
 # Unity 임시
 .utmp/
 **/.utmp/
+
+# 효과음 미리듣기 (코드에서 재생성 가능)
+/sfx-preview/

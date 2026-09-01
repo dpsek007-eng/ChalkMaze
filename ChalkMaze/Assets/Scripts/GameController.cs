@@ -86,41 +86,55 @@ namespace ChalkMaze
 
             switch (res)
             {
-                case MoveResult.Blocked: return;
+                case MoveResult.Blocked:
+                    Sfx.I?.Play(Sound.Bump, 0.7f);
+                    return;
 
                 case MoveResult.BlockedByPit:
+                    Sfx.I?.Play(Sound.Bump, 0.8f);
                     Hud.Toast("구덩이", _st.Count(ItemKind.Plank) > 0 ? "판자를 놓으면 건널 수 있다" : "판자가 필요하다");
                     return;
 
                 case MoveResult.LockedExit:
+                    Sfx.I?.Play(Sound.Bump, 0.9f);
                     Hud.Toast("문이 잠겼다", "이 층 어딘가에 열쇠가 있다");
                     RefreshAll();
                     return;
 
                 case MoveResult.GotKey:
+                    Sfx.I?.Play(Sound.Key);
                     Rig.Kick(0.7f);
                     Hud.Toast("열쇠를 찾았다", "이제 문으로 돌아가면 된다");
                     break;
 
                 case MoveResult.LitBonfire:
+                    Sfx.I?.Play(Sound.FireLit);
                     Rig.Kick(1f);
                     Hud.Toast("화톳불을 밝혔다", "여기서 다시 시작합니다 · 횃불 회복");
                     break;
 
                 case MoveResult.PickedUp:
+                    Sfx.I?.Play(Sound.Pickup);
                     Hud.Toast(ItemInfo.Name(_st.LastPickup), ItemInfo.Hint(_st.LastPickup));
                     OfferDoubleItem();
                     break;
 
-                case MoveResult.Won:  RefreshAll(); ShowWin(); return;
-                case MoveResult.Died: RefreshAll(); ShowDead(); return;
+                case MoveResult.Won:  Sfx.I?.Play(Sound.Clear);    RefreshAll(); ShowWin();  return;
+                case MoveResult.Died: Sfx.I?.Play(Sound.TorchOut); RefreshAll(); ShowDead(); return;
+
+                case MoveResult.Stepped:
+                    Sfx.I?.Play(Sound.Step, 0.55f);
+                    break;
             }
             RefreshAll();
         }
 
         public void DoMark(MarkKind kind)
         {
+            int before = _st.Marks.Count;
             if (!_st.ToggleMark(kind)) { Hud.Toast("분필이 없다", "이미 찍은 자국을 회수해서 옮기세요"); return; }
+            // 회수인지 새로 긋는지에 따라 소리가 다르다
+            Sfx.I?.Play(_st.Marks.Count < before ? Sound.Erase : Sound.Chalk);
             RefreshAll();
         }
 
@@ -146,7 +160,7 @@ namespace ChalkMaze
                 return;
             }
 
-            if (k == ItemKind.Shovel) { Rig.Kick(0.8f); Mesh.Build(_st.Maze); Hud.Toast("벽을 뚫었다", "어디를 뚫었는지 기억하세요"); }
+            if (k == ItemKind.Shovel) { Sfx.I?.Play(Sound.Dig); Rig.Kick(0.8f); Mesh.Build(_st.Maze); Hud.Toast("벽을 뚫었다", "어디를 뚫었는지 기억하세요"); }
             if (k == ItemKind.Thread) Hud.Toast(_st.ThreadSet ? "매듭을 묶었다" : "실을 따라 돌아왔다", "");
             if (k == ItemKind.Compass) Hud.Toast("나침반", "12걸음 동안 출구 방향이 보인다");
             if (k == ItemKind.Lantern) Hud.Toast("랜턴", $"{RunState.LanternDuration}걸음 동안 시야 +{RunState.LanternBoost}");
@@ -189,6 +203,16 @@ namespace ChalkMaze
                 OnPick = () => { LoadLevel(1); RefreshAll(); }
             });
             choices.Add(new Overlay.Choice { Label = "규칙", OnPick = ShowRules });
+            choices.Add(new Overlay.Choice
+            {
+                Label = PlayerProfile.Muted ? "소리 켜기" : "소리 끄기",
+                OnPick = () =>
+                {
+                    PlayerProfile.Muted = !PlayerProfile.Muted;
+                    if (!PlayerProfile.Muted) Sfx.I?.Play(Sound.Pickup);
+                    ShowIntro(PlayerProfile.Streak, "");
+                }
+            });
 
             Overlay.Show($"전 {LevelConfig.FinalLevel}층", "분필 <color=#FF7A3D>미로</color>", body,
                 $"<color=#6E6875>연속 출석 {streak}일 · {reward}</color>",

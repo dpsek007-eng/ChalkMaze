@@ -23,6 +23,13 @@ namespace ChalkMaze
         public static int LanternLevel { get => PlayerPrefs.GetInt(KLanternLv, 0);  set { PlayerPrefs.SetInt(KLanternLv, value); PlayerPrefs.Save(); } }
         public static int ChalkBonus   { get => PlayerPrefs.GetInt(KChalkBonus, 0); set { PlayerPrefs.SetInt(KChalkBonus, value); PlayerPrefs.Save(); } }
 
+        const string KMuted = "cm.muted";
+        public static bool Muted
+        {
+            get => PlayerPrefs.GetInt(KMuted, 0) == 1;
+            set { PlayerPrefs.SetInt(KMuted, value ? 1 : 0); PlayerPrefs.Save(); }
+        }
+
         public static int ItemCount(ItemKind k) => PlayerPrefs.GetInt("cm.item." + k, 0);
         public static void AddItem(ItemKind k, int n)
         {
