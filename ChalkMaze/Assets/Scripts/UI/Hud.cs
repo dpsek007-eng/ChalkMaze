@@ -69,12 +69,13 @@ namespace ChalkMaze
             // ── 아이템 줄 ──
             _itemRow = UIKit.Empty(canvas, "Items");
             // D-패드(70~370)·표식 버튼(90~330) 위로 올린다. 겹치면 터치가 먹힌다.
-            UIKit.At(_itemRow, new Vector2(0, 0), new Vector2(1, 0), new Vector2(36, 396), new Vector2(-36, 494));
+            // D-패드가 y 48~468 을 쓰므로 그 위로 올린다. 겹치면 터치가 가로채인다.
+            UIKit.At(_itemRow, new Vector2(0, 0), new Vector2(1, 0), new Vector2(36, 500), new Vector2(-36, 598));
 
             // ── 하단 조작 ──
             _dirArrow = ProcTex.ArrowMark();
             var pad = UIKit.Empty(canvas, "Dpad");
-            UIKit.At(pad, new Vector2(0, 0), new Vector2(0, 0), new Vector2(30, 60), new Vector2(350, 380));
+            UIKit.At(pad, new Vector2(0, 0), new Vector2(0, 0), new Vector2(24, 48), new Vector2(444, 468));
             MakeDirBtn(pad, 0, new Vector2(0.33f, 0.66f), new Vector2(0.67f, 1f),    0f);
             MakeDirBtn(pad, 3, new Vector2(0f,    0.33f), new Vector2(0.34f, 0.67f), 90f);
             MakeDirBtn(pad, 1, new Vector2(0.66f, 0.33f), new Vector2(1f,    0.67f), -90f);
@@ -111,7 +112,7 @@ namespace ChalkMaze
             img.raycastTarget = false;
             var rt = go.GetComponent<RectTransform>();
             rt.anchorMin = new Vector2(0.5f, 0.5f); rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(96, 96);
+            rt.sizeDelta = new Vector2(120, 120);
             rt.localRotation = Quaternion.Euler(0, 0, rotDeg);
 
             var rep = hit.gameObject.AddComponent<HoldRepeat>();

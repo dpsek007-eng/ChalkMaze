@@ -92,6 +92,32 @@ namespace ChalkMaze
 #endif
         }
 
+        /// 누르고 있는 동안의 위치. 손가락을 떼지 않고 계속 끌 때 쓴다.
+        public static bool PressHeld(out Vector2 pos)
+        {
+            pos = default;
+#if ENABLE_INPUT_SYSTEM
+            var t = Touchscreen.current;
+            if (t != null && t.primaryTouch.press.isPressed)
+            {
+                pos = t.primaryTouch.position.ReadValue();
+                return true;
+            }
+            var m = Mouse.current;
+            if (m != null && m.leftButton.isPressed)
+            {
+                pos = m.position.ReadValue();
+                return true;
+            }
+            return false;
+#elif ENABLE_LEGACY_INPUT_MANAGER
+            if (Input.GetMouseButton(0)) { pos = Input.mousePosition; return true; }
+            return false;
+#else
+            return false;
+#endif
+        }
+
         /// 오버레이 버튼을 키보드로 누르기 (스페이스 / 엔터)
         public static bool SubmitPressed()
         {

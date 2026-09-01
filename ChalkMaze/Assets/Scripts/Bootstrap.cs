@@ -18,7 +18,10 @@ namespace ChalkMaze
             Screen.sleepTimeout = SleepTimeout.SystemSetting;
 
             // ── 카메라 ──
-            var camGo = new GameObject("MainCamera", typeof(Camera), typeof(CameraRig));
+            // AudioListener 를 빠뜨리면 소리가 재생돼도 아무것도 들리지 않는다.
+            // 예외도 나지 않아서 로그로는 절대 드러나지 않는다.
+            var camGo = new GameObject("MainCamera",
+                typeof(Camera), typeof(CameraRig), typeof(AudioListener));
             camGo.tag = "MainCamera";
             var cam = camGo.GetComponent<Camera>();
             cam.orthographic = true;
