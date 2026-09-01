@@ -10,7 +10,13 @@
 password.txt
 
 # ─── 빌드 산출물 ───
+# release/ 에는 AAB 와 함께 IL2CPP 가 생성한 C++ 수백만 줄, 수백 MB 짜리
+# 심볼 zip 이 떨어진다. 한 번 커밋되면 저장소가 영구히 무거워진다.
 /build/
+/release/
+*_BurstDebugInformation_DoNotShip/
+**/il2cppOutput/
+*.symbols.zip
 [Bb]uilds/
 *.apk
 *.aab
@@ -59,3 +65,7 @@ Thumbs.db
 *-48.png
 *-96.png
 compare.png
+
+# Unity 임시
+.utmp/
+**/.utmp/
