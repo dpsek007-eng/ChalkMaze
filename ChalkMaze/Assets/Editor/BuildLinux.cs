@@ -18,7 +18,11 @@ namespace ChalkMaze.EditorTools
                 scenes = new[] { "Assets/Scenes/Main.unity" },
                 locationPathName = outPath,
                 target = BuildTarget.StandaloneLinux64,
-                options = BuildOptions.Development
+                // CM_RELEASE=1 이면 개발 빌드 워터마크가 없는 빌드를 만든다.
+                // 스토어 스크린샷에는 워터마크가 들어가면 안 된다.
+                options = System.Environment.GetEnvironmentVariable("CM_RELEASE") == "1"
+                          ? BuildOptions.None
+                          : BuildOptions.Development
             };
 
             var report = BuildPipeline.BuildPlayer(opts);
