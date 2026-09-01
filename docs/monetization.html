@@ -1,0 +1,271 @@
+<title>분필 미로 수익 설계</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap">
+
+<style>
+:root{
+  --ground:#FBFAF7;
+  --raise:#FFFFFF;
+  --ink:#1A1720;
+  --muted:#6E6875;
+  --faint:#9A94A3;
+  --rule:#E4E0DA;
+  --accent:#C4491A;
+  --accent-soft:#FBEDE7;
+  --fire:#9A6A16;
+  --good:#1F7A52;
+  --bad:#B2342C;
+
+  --display:"Instrument Serif",Georgia,serif;
+  --body:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0F0D12; --raise:#171420; --ink:#E8E3D6; --muted:#948DA1;
+    --faint:#6E6875; --rule:#2A2633; --accent:#FF7A3D; --accent-soft:#2A1710;
+    --fire:#F2A33C; --good:#4ADE9A; --bad:#FF6B60;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0F0D12; --raise:#171420; --ink:#E8E3D6; --muted:#948DA1;
+  --faint:#6E6875; --rule:#2A2633; --accent:#FF7A3D; --accent-soft:#2A1710;
+  --fire:#F2A33C; --good:#4ADE9A; --bad:#FF6B60;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:var(--body); font-size:16px; line-height:1.65;
+  padding:64px 24px 120px;
+}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+
+header{display:flex;flex-direction:column;gap:14px}
+.kicker{
+  font-family:var(--mono);font-size:11px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--accent);
+}
+h1{
+  font-family:var(--display);font-weight:400;
+  font-size:clamp(38px,7vw,60px);line-height:1.02;
+  letter-spacing:-.015em;text-wrap:balance;
+}
+.lede{font-size:17.5px;color:var(--muted);max-width:60ch;text-wrap:pretty}
+
+section{display:flex;flex-direction:column;gap:18px}
+h2{
+  font-family:var(--display);font-weight:400;font-size:30px;line-height:1.15;
+  padding-bottom:10px;border-bottom:1px solid var(--rule);text-wrap:balance;
+}
+h3{font-size:14px;font-weight:600;letter-spacing:.02em;margin-top:6px}
+p{max-width:64ch;text-wrap:pretty}
+p strong{font-weight:600}
+.muted{color:var(--muted)}
+
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:520px}
+th,td{text-align:left;padding:11px 14px 11px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+th{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--faint);font-weight:500;
+  border-bottom:1px solid var(--ink);
+}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr td:last-child,tr th:last-child{padding-right:0}
+
+.callout{
+  background:var(--accent-soft);
+  border-left:2px solid var(--accent);
+  padding:18px 20px;display:flex;flex-direction:column;gap:8px;
+}
+.callout .tag{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);
+}
+.callout p{max-width:none}
+
+.loop{display:flex;flex-direction:column;gap:0;margin:4px 0}
+.loop-step{display:grid;grid-template-columns:34px 1fr;gap:16px;align-items:start;padding:12px 0}
+.loop-step + .loop-step{border-top:1px solid var(--rule)}
+.loop-n{
+  font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);
+  padding-top:3px;font-variant-numeric:tabular-nums;
+}
+.loop-b{display:flex;flex-direction:column;gap:3px}
+.loop-t{font-weight:600;font-size:15px}
+.loop-d{font-size:14px;color:var(--muted)}
+
+.share-demo{
+  font-family:var(--mono);font-size:14px;line-height:1.8;
+  background:var(--raise);border:1px solid var(--rule);
+  padding:18px 20px;white-space:pre;overflow-x:auto;
+}
+
+.verdict{
+  display:flex;flex-direction:column;gap:10px;
+  padding:22px;border:1px solid var(--rule);background:var(--raise);
+}
+.verdict h3{margin:0;font-family:var(--display);font-size:22px;font-weight:400}
+
+ul{padding-left:20px;display:flex;flex-direction:column;gap:7px;max-width:64ch}
+li{padding-left:2px}
+li::marker{color:var(--faint)}
+
+code{
+  font-family:var(--mono);font-size:.9em;
+  background:var(--raise);border:1px solid var(--rule);
+  padding:1px 5px;border-radius:3px;
+}
+.good{color:var(--good);font-weight:600}
+.bad{color:var(--bad);font-weight:600}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="kicker">IJ컴퍼니 · 분필 미로 · 사업 설계</div>
+  <h1>광고는 트래픽을 돈으로 바꾸는 장치일 뿐이다</h1>
+  <p class="lede">수익 구조, 다시 켜게 만드는 장치, 저절로 퍼지게 하는 장치.
+    셋을 따로 두면 아무것도 작동하지 않는다. 숫자는 전부 가정이며, 실측으로 교체할 자리다.</p>
+</header>
+
+<section>
+  <h2>1. 광고 배치</h2>
+  <p>배치의 기준은 "얼마나 자주 띄우느냐"가 아니라 <strong>"플레이어가 그 순간 그것을 원하느냐"</strong>다.
+     원하는 순간에 걸린 리워드 광고는 시청률이 높고 이탈을 만들지 않는다. 억지로 끼운 광고는 둘 다 망친다.</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>지점</th><th>형태</th><th>왜 여기인가</th><th>구현</th></tr></thead>
+    <tbody>
+      <tr><td><strong>횃불 재점화</strong></td><td>리워드</td>
+          <td>연료 0. 되돌아가기 싫은 마음이 최고조인 순간. <span class="good">최대 수익원</span></td>
+          <td class="num">완료</td></tr>
+      <tr><td><strong>아이템 2배</strong></td><td>리워드</td>
+          <td>주운 직후. 손실이 아니라 이득을 키우는 제안이라 거부감이 없다</td>
+          <td class="num">완료</td></tr>
+      <tr><td><strong>나침반 1회</strong></td><td>리워드</td>
+          <td>길을 잃었을 때만 노출. 평소엔 숨긴다</td>
+          <td class="num">훅만</td></tr>
+      <tr><td><strong>층 클리어</strong></td><td>전면</td>
+          <td>3층마다 1회. 이보다 잦으면 이탈이 급증한다</td>
+          <td class="num">완료</td></tr>
+      <tr><td>배너</td><td>—</td>
+          <td><strong>넣지 않는다.</strong> 미로가 화면 전체를 써야 정보가 읽힌다</td>
+          <td class="num">제외</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout">
+    <div class="tag">지금 코드에 든 것</div>
+    <p><code>AdManager.cs</code> 의 광고 단위 ID는 <strong>구글 공개 테스트 ID</strong>다.
+       그대로 출시하면 수익이 0이고, 실제 ID로 본인 광고를 클릭하면 <strong>AdMob 계정이 정지</strong>된다.
+       출시 전 반드시 콘솔 발급 ID로 교체할 것.</p>
+  </div>
+</section>
+
+<section>
+  <h2>2. 인앱결제</h2>
+  <p>광고 제거를 팔되 <strong>리워드 광고는 남겨두는 것</strong>이 업계 표준이다.
+     리워드는 플레이어가 원해서 보는 것이라, 없애면 오히려 손해라고 느낀다.</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>상품</th><th>가격대</th><th>내용</th><th>성격</th></tr></thead>
+    <tbody>
+      <tr><td><strong>광고 제거</strong></td><td class="num">₩3,900</td><td>전면광고 제거. 리워드는 유지</td><td>주력</td></tr>
+      <tr><td>랜턴 강화</td><td class="num">₩2,500</td><td>시야 반경 영구 +1</td><td>영구</td></tr>
+      <tr><td>분필 주머니</td><td class="num">₩2,500</td><td>모든 층 분필 한도 영구 +2</td><td>영구</td></tr>
+      <tr><td>탐험가 꾸러미</td><td class="num">₩5,900</td><td>광고 제거 + 랜턴 + 분필</td><td>번들</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="muted">소모품 판매는 넣지 않는다. 소모품을 팔면 난이도를 돈으로 푸는 구조가 되고,
+     그 순간 자원 배분이라는 이 게임의 핵심 재미가 무너진다.</p>
+</section>
+
+<section>
+  <h2>3. 다시 켜게 만드는 장치</h2>
+  <p>리텐션은 게임의 재미보다 <strong>구조</strong>가 결정한다. 아래 넷은 서로 물린다.</p>
+  <div class="loop">
+    <div class="loop-step"><div class="loop-n">01</div><div class="loop-b">
+      <div class="loop-t">일일 미로</div>
+      <div class="loop-d">날짜에서 시드를 뽑아 전 세계가 같은 미로를 푼다. 서버가 필요 없다.
+        하루 한 판, 걸음 수로 비교. <strong>가장 강력한 장치이자 3번 홍보의 재료</strong>다.
+        <code>PlayerProfile.DailySeed</code> 구현됨.</div></div></div>
+    <div class="loop-step"><div class="loop-n">02</div><div class="loop-b">
+      <div class="loop-t">연속 출석</div>
+      <div class="loop-d">3일마다 삽, 7일에 아리아드네의 실. 끊기면 0으로. 구현됨.</div></div></div>
+    <div class="loop-step"><div class="loop-n">03</div><div class="loop-b">
+      <div class="loop-t">최고 깊이 기록</div>
+      <div class="loop-d">"27층 도달". 다음에 켤 때 갱신할 대상이 항상 남아 있다. 구현됨.</div></div></div>
+    <div class="loop-step"><div class="loop-n">04</div><div class="loop-b">
+      <div class="loop-t">주간 특수 미로</div>
+      <div class="loop-d">분필 0개, 화톳불 1개 같은 변형 규칙. 미구현 — 위 셋의 수치가 나온 뒤에 판단.</div></div></div>
+  </div>
+</section>
+
+<section>
+  <h2>4. 저절로 퍼지게 하는 장치</h2>
+  <p>워들이 증명한 구조를 그대로 쓴다. <strong>정답을 노출하지 않는 결과 공유.</strong>
+     스포일러가 없으니 마음 놓고 올리고, 받은 사람은 무슨 뜻인지 궁금해서 눌러본다.</p>
+  <div class="share-demo">🕯️ 분필미로 #243
+84걸음 · 3회차
+🔥🔥▪️
+⬜⬜⬜⬛⬛</div>
+  <p class="muted">불꽃은 밝힌 화톳불, 흰 칸은 쓴 분필. 미로의 모양은 어디에도 없다.
+     <code>ShareCard.cs</code> 에 안드로이드 네이티브 공유까지 구현됨.</p>
+  <h3>스토어 검색 대응</h3>
+  <ul>
+    <li>제목·설명에 넣을 축: <strong>미로 · 미궁 · 기억력 · 두뇌 · 탈출 · 던전</strong></li>
+    <li>첫 스크린샷은 <strong>어둠 속 화톳불</strong> 한 장. 이 게임에서 가장 설명이 필요 없는 그림이다</li>
+    <li>아이콘에 글자를 넣지 않는다. 목록에서 축소되면 읽히지 않는다</li>
+  </ul>
+</section>
+
+<section>
+  <h2>5. 그래서 얼마를 버는가</h2>
+  <p>정직하게 말하면 <strong>DAU가 전부</strong>다. 아래는 하이브리드캐주얼 퍼즐의 통상 범위를 가정한 값이며,
+     실제 수치는 출시 후 2주면 실측으로 대체된다.</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>DAU</th><th>ARPDAU 가정</th><th>월 매출(추정)</th><th>현실</th></tr></thead>
+    <tbody>
+      <tr><td class="num">100</td><td class="num">$0.02–0.05</td><td class="num">$60–150</td><td>첫 게임 대부분이 여기 못 온다</td></tr>
+      <tr><td class="num">1,000</td><td class="num">$0.02–0.05</td><td class="num">$600–1,500</td><td>바이럴이 한 번 터져야 도달</td></tr>
+      <tr><td class="num">10,000</td><td class="num">$0.02–0.05</td><td class="num">$6,000–15,000</td><td>광고비 투입 없이는 거의 불가</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="verdict">
+    <h3>병목은 게임이 아니라 유저 획득이다</h3>
+    <p>광고를 아무리 잘 붙여도 <strong>DAU 0에 무엇을 곱해도 0</strong>이다.
+      그리고 개인 개발자가 설치를 돈으로 사면 CPI가 광고 수익을 넘어서 무조건 적자다.
+      그래서 이 설계에서 실제로 돈에 가장 가까운 항목은 광고 배치가 아니라
+      <strong>4번의 공유 카드</strong>다. 유일하게 비용 없이 유입을 만든다.</p>
+    <p>첫 게임의 합리적 목표는 매출이 아니라 <strong>출시 파이프라인 완주</strong>다.
+      스토어 등록 · 비공개 테스트 · 심사 · SDK 연동 · 지표 확인을 한 바퀴 돌면
+      두 번째 게임의 출시 비용이 크게 줄어든다. 돈은 거기서 나온다.</p>
+  </div>
+</section>
+
+<section>
+  <h2>6. 출시까지 남은 일</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>항목</th><th>상태</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>코어 게임플레이</td><td class="good">완료</td><td>2,090줄, 미컴파일</td></tr>
+      <tr><td>아이템 5종 · 구덩이</td><td class="good">완료</td><td>4층 / 6층부터 등장</td></tr>
+      <tr><td>광고 훅 · IAP 구조</td><td class="good">완료</td><td>SDK 임포트 후 <code>CHALK_ADS</code> 정의</td></tr>
+      <tr><td>출석 · 기록 · 공유</td><td class="good">완료</td><td>일일 미로 화면은 미연결</td></tr>
+      <tr><td>Unity 에디터에서 첫 실행</td><td class="bad">대기</td><td>에디터 설치 후 즉시</td></tr>
+      <tr><td>사운드</td><td class="bad">없음</td><td>발소리·점화음만 있어도 체감이 크게 다르다</td></tr>
+      <tr><td>테스터 12명 × 14일</td><td class="bad">미착수</td><td><strong>지금부터 모아야 출시가 안 밀린다</strong></td></tr>
+      <tr><td>실제 AdMob ID 교체</td><td class="bad">미착수</td><td>테스트 ID로 출시하면 수익 0</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+</div>

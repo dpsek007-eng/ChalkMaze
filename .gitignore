@@ -1,0 +1,61 @@
+# ─────────────────────────────────────────────
+#  🔴 서명키 — 절대 올리지 않는다
+#  올라가면 즉시 폐기하고 새로 발급해야 한다
+# ─────────────────────────────────────────────
+/keystore/
+*.keystore
+*.jks
+*.p12
+비밀번호.txt
+password.txt
+
+# ─── 빌드 산출물 ───
+/build/
+[Bb]uilds/
+*.apk
+*.aab
+*.x86_64
+*.so
+*.debug
+
+# ─── Unity 생성물 ───
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+[Uu]serSettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# ─── IDE / 프로젝트 파일 ───
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# ─── 기타 ───
+sysinfo.txt
+*.stackdump
+crashlytics-build.properties
+.DS_Store
+Thumbs.db
+*.unitypackage
+
+# ─── 스크린샷 (개발용, 스토어 제출본만 따로 관리) ───
+*-48.png
+*-96.png
+compare.png
