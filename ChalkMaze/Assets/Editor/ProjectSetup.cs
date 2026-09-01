@@ -24,8 +24,13 @@ namespace ChalkMaze.EditorTools
             PlayerSettings.allowedAutorotateToLandscapeLeft = false;
             PlayerSettings.allowedAutorotateToLandscapeRight = false;
             PlayerSettings.runInBackground = true;
-            PlayerSettings.bundleVersion = "0.1.0";
-            PlayerSettings.Android.bundleVersionCode = 1;
+
+            // 버전은 환경변수로 넘긴다. Play 는 versionCode 가 이전보다 커야 업로드를 받는다.
+            var ver = System.Environment.GetEnvironmentVariable("CM_VERSION");
+            var code = System.Environment.GetEnvironmentVariable("CM_VERSION_CODE");
+            if (!string.IsNullOrEmpty(ver)) PlayerSettings.bundleVersion = ver;
+            if (!string.IsNullOrEmpty(code) && int.TryParse(code, out var c))
+                PlayerSettings.Android.bundleVersionCode = c;
             // 26 이 현재 허용되는 최저값이다. 더 올리면 기기 도달률만 줄어든다.
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel26;
 
