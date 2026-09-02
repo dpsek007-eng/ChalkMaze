@@ -9,6 +9,25 @@ namespace ChalkMaze
     {
         public GameController GC;
 
+        Texture2D Shot()
+        {
+            var cam = Camera.main;
+            if (cam == null) return null;
+            const int S = 900;
+            var rt = new RenderTexture(S, S, 24, RenderTextureFormat.ARGB32);
+            var pt = cam.targetTexture; var pa = RenderTexture.active;
+            float ps = cam.orthographicSize; cam.orthographicSize = 3.1f;
+            var pp = cam.transform.position;
+            var pl = GameObject.Find("Player");
+            if (pl != null) cam.transform.position = new Vector3(pl.transform.position.x, pl.transform.position.y, pp.z);
+            cam.targetTexture = rt; cam.Render(); cam.transform.position = pp; RenderTexture.active = rt;
+            var tx = new Texture2D(S, S, TextureFormat.RGB24, false);
+            tx.ReadPixels(new Rect(0, 0, S, S), 0, 0); tx.Apply();
+            RenderTexture.active = pa; cam.targetTexture = pt; cam.orthographicSize = ps;
+            rt.Release(); Destroy(rt);
+            return tx;
+        }
+
         IEnumerator Start()
         {
             string dir = System.Environment.GetEnvironmentVariable("CM_SHARE_DIR");
@@ -22,14 +41,14 @@ namespace ChalkMaze
             st.ToggleMark(MarkKind.Arrow);
 
             yield return new WaitForEndOfFrame();
-            var tex = ShareImage.Build(st, PlayerProfile.TodayIndex, true);
+            var tex = ShareImage.Build(st, PlayerProfile.TodayIndex, true, Shot());
             System.IO.File.WriteAllBytes(System.IO.Path.Combine(dir, "share-daily.png"), tex.EncodeToPNG());
             Debug.Log("[SHARE] daily 저장");
 
             st.LoadLevel(12, new System.Random(7));
             for (int i = 0; i < 25; i++) { st.TryMove(Random.Range(0, 4)); yield return null; }
             yield return new WaitForEndOfFrame();
-            var t2 = ShareImage.Build(st, PlayerProfile.TodayIndex, false);
+            var t2 = ShareImage.Build(st, PlayerProfile.TodayIndex, false, Shot());
             System.IO.File.WriteAllBytes(System.IO.Path.Combine(dir, "share-level.png"), t2.EncodeToPNG());
             Debug.Log("[SHARE] level 저장");
 

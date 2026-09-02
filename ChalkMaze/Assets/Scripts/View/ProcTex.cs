@@ -352,6 +352,44 @@ namespace ChalkMaze
             return Sprite.Create(t, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), 100);
         }
 
+        /// 폭죽 — 한 점에서 뻗는 불꽃 갈래. 끝에 불티가 맺힌다.
+        public static Sprite Spark(int seed)
+        {
+            int N = 192;
+            var t = Blank(N);
+            float c = N / 2f;
+            var rng = new System.Random(seed);
+            int rays = 11 + rng.Next(5);
+
+            for (int i = 0; i < rays; i++)
+            {
+                float a = (float)(i * (2.0 * Mathf.PI / rays) + rng.NextDouble() * 0.25);
+                float len = c * (0.45f + (float)rng.NextDouble() * 0.5f);
+                float ex = c + Mathf.Cos(a) * len, ey = c + Mathf.Sin(a) * len;
+
+                // 안쪽은 진하고 바깥으로 갈수록 옅어지는 갈래
+                int steps = Mathf.CeilToInt(len);
+                for (int k = 0; k <= steps; k++)
+                {
+                    float u = k / (float)steps;
+                    float x = Mathf.Lerp(c, ex, u), y = Mathf.Lerp(c, ey, u);
+                    float w = Mathf.Lerp(2.2f, 0.6f, u);
+                    float al = Mathf.Lerp(1f, 0.15f, u * u);
+                    int r = Mathf.CeilToInt(w);
+                    for (int dy = -r; dy <= r; dy++)
+                    for (int dx = -r; dx <= r; dx++)
+                    {
+                        float d = Mathf.Sqrt(dx * dx + dy * dy);
+                        if (d <= w) Plot(t, (int)x + dx, (int)y + dy, al * (1f - d / (w + 0.5f)));
+                    }
+                }
+                // 끝의 불티
+                Disc(t, ex, ey, 2.6f, false, 0);
+            }
+            Disc(t, c, c, 4.5f, false, 0);
+            return Finish(t);
+        }
+
         /// 조이스틱 기준점을 나타내는 얇은 원
         public static Sprite Ring()
         {

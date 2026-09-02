@@ -14,7 +14,7 @@ namespace ChalkMaze
         /// 미로에서 멀리 떨어진 곳. 게임 카메라에 걸리지 않는다.
         static readonly Vector3 Far = new Vector3(100000f, 100000f, 0f);
 
-        public static Texture2D Build(RunState st, int dayIndex, bool daily)
+        public static Texture2D Build(RunState st, int dayIndex, bool daily, Texture2D shot = null)
         {
             var root = new GameObject("ShareCard");
             root.transform.position = Far;
@@ -28,7 +28,7 @@ namespace ChalkMaze
             crt.position = Far;
             canvasGo.transform.localScale = Vector3.one * 0.01f;
 
-            BuildCard(canvasGo.transform, st, dayIndex, daily);
+            BuildCard(canvasGo.transform, st, dayIndex, daily, shot);
 
             // 카드만 담는 카메라
             var camGo = new GameObject("cam", typeof(Camera));
@@ -60,7 +60,7 @@ namespace ChalkMaze
             return tex;
         }
 
-        static void BuildCard(Transform cv, RunState st, int dayIndex, bool daily)
+        static void BuildCard(Transform cv, RunState st, int dayIndex, bool daily, Texture2D shot)
         {
             // 어둠 + 횃불
             var bg = UIKit.Panel(cv, "bg", Palette.Void);
@@ -84,31 +84,73 @@ namespace ChalkMaze
             ci.color = Palette.Chalk;
             ci.preserveAspect = true;
             var crt2 = ci.rectTransform;
-            crt2.anchorMin = crt2.anchorMax = new Vector2(0.5f, 1f);
-            crt2.anchoredPosition = new Vector2(0, -330);
-            crt2.sizeDelta = new Vector2(230, 230);
+            crt2.anchorMin = crt2.anchorMax = new Vector2(0.5f, 0.5f);
+            crt2.anchoredPosition = new Vector2(0, 740);
+            crt2.sizeDelta = new Vector2(190, 190);
 
-            Label(cv, daily ? $"오늘의 미로 #{dayIndex}" : "분필 미로", 46, Palette.Ember, 1f, -500, 70);
-            Label(cv, "분필 미로", 92, Palette.Chalk, 1f, -600, 130);
+            Label(cv, daily ? $"오늘의 미로 #{dayIndex}" : $"{st.Cfg.Chapter} · {st.Level}층 돌파", 44, Palette.Ember, 0.5f, 610, 64);
+            Label(cv, "분필 미로", 84, Palette.Chalk, 0.5f, 520, 116);
+
+            // 클리어한 순간의 미로. 어느 게임인지 한눈에 보여야 공유가 힘을 얻는다.
+            if (shot != null)
+            {
+                var frame = UIKit.Panel(cv, "frame", new Color(Palette.Chalk.r, Palette.Chalk.g, Palette.Chalk.b, 0.18f));
+                var frt = frame.GetComponent<RectTransform>();
+                frt.anchorMin = frt.anchorMax = new Vector2(0.5f, 0.5f);
+                frt.anchoredPosition = new Vector2(0, 90);
+                frt.sizeDelta = new Vector2(640, 640);
+
+                var shotGo = new GameObject("shot", typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
+                shotGo.transform.SetParent(frame, false);
+                var ri = shotGo.GetComponent<RawImage>();
+                ri.texture = shot;
+                var srt = ri.rectTransform;
+                srt.anchorMin = Vector2.zero; srt.anchorMax = Vector2.one;
+                srt.offsetMin = new Vector2(6, 6); srt.offsetMax = new Vector2(-6, -6);
+            }
+
+            // 폭죽 — 해냈다는 신호. 숫자만 있으면 성적표처럼 보인다.
+            for (int i = 0; i < 4; i++)
+            {
+                var sp = new GameObject("spark", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                sp.transform.SetParent(cv, false);
+                sp.transform.SetSiblingIndex(2);   // 배경·후광 위, 글자 아래
+                var si = sp.GetComponent<Image>();
+                si.sprite = ProcTex.Spark(dayIndex * 31 + i);
+                var col = i % 2 == 0 ? Palette.Fire : Palette.Ember;
+                si.color = new Color(col.r, col.g, col.b, 0.75f - i * 0.09f);
+                si.preserveAspect = true;
+                var rt = si.rectTransform;
+                rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+                float[] xs = { -360f, 350f, -300f, 330f };
+                float[] ys = { 520f, 430f, -180f, -110f };
+                float[] sz = { 260f, 200f, 170f, 220f };
+                rt.anchoredPosition = new Vector2(xs[i], ys[i]);
+                rt.sizeDelta = new Vector2(sz[i], sz[i]);
+            }
 
             // 성적
             string big = daily ? $"{st.Steps}걸음" : $"{st.Level}층";
-            Label(cv, big, 150, Palette.Chalk, 0.5f, 130, 200);
+            Label(cv, big, 132, Palette.Chalk, 0.5f, -400, 170);
 
             string sub = daily
                 ? $"{st.Runs}회차 · 화톳불 {st.FiresLit}/{st.Bonfires.Count} · 분필 {st.Marks.Count}"
                 : $"{st.Runs}회차 · 총 {st.Steps}걸음";
-            Label(cv, sub, 44, Palette.Ash, 0.5f, -30, 70);
+            Label(cv, sub, 40, Palette.Ash, 0.5f, -510, 60);
 
-            // 규칙이 있으면 알려 준다 — 같은 조건이라는 게 비교의 전제다
+            // 최고 도달 층수 — 오늘의 미로에서도 실력의 지표가 된다
+            int best = Mathf.Max(PlayerProfile.BestLevel, daily ? 0 : st.Level);
+            if (best > 0)
+                Label(cv, $"최고 도달  {best}층", 44, Palette.Fire, 0.5f, -586, 60);
+
             string mods = "";
             foreach (var m in ModInfo.Pool)
                 if (st.Cfg.Has(m)) mods += (mods.Length > 0 ? " · " : "") + ModInfo.Name(m);
             if (mods.Length > 0)
-                Label(cv, mods, 42, Palette.Fire, 0.5f, -130, 70);
+                Label(cv, mods, 38, Palette.Ash, 0.5f, -652, 54);
 
-            Label(cv, "지나온 길은 다시 어두워진다", 40, Palette.Ash, 0f, 300, 60);
-            Label(cv, "당신은 몇 걸음?", 46, Palette.Chalk, 0f, 200, 70);
+            Label(cv, "지나온 길은 다시 어두워진다", 38, Palette.Ash, 0.5f, -772, 56);
+            Label(cv, daily ? "당신은 몇 걸음?" : "당신은 몇 층까지?", 46, Palette.Chalk, 0.5f, -862, 66);
         }
 
         static void Label(Transform cv, string text, int size, Color c,

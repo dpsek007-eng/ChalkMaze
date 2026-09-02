@@ -332,9 +332,48 @@ namespace ChalkMaze
                                      OnPick = () => ShowIntro(PlayerProfile.Streak, "") });
         }
 
+        /// 클리어한 순간의 미로를 사진으로 담는다. 글자와 숫자만으로는
+        /// 어느 게임인지 보이지 않아 공유가 힘을 잃는다.
+        Texture2D CaptureMaze()
+        {
+            var cam = Rig != null ? Rig.GetComponent<Camera>() : Camera.main;
+            if (cam == null) return null;
+
+            const int W = 900, H = 900;
+            var rt = new RenderTexture(W, H, 24, RenderTextureFormat.ARGB32);
+            var prevTarget = cam.targetTexture;
+            var prevActive = RenderTexture.active;
+            float prevSize = cam.orthographicSize;
+
+            // 게임 창은 세로로 길어 배율이 그에 맞춰져 있다. 정사각형에 그대로 쓰면
+            // 열두 칸이 담겨 밝은 부분이 점처럼 작아진다.
+            cam.orthographicSize = 3.1f;
+            // 카메라는 부드럽게 따라오느라 아직 도착 전일 수 있다. 찍기 전에 맞춘다.
+            var prevPos = cam.transform.position;
+            if (Glyphs != null && Glyphs.PlayerT != null)
+                cam.transform.position = new Vector3(
+                    Glyphs.PlayerT.position.x, Glyphs.PlayerT.position.y, prevPos.z);
+            cam.targetTexture = rt;
+            cam.Render();
+            cam.transform.position = prevPos;
+            RenderTexture.active = rt;
+
+            var tex = new Texture2D(W, H, TextureFormat.RGB24, false);
+            tex.ReadPixels(new Rect(0, 0, W, H), 0, 0);
+            tex.Apply();
+
+            RenderTexture.active = prevActive;
+            cam.targetTexture = prevTarget;
+            cam.orthographicSize = prevSize;
+            rt.Release();
+            Destroy(rt);
+            return tex;
+        }
+
         void ShareResult()
         {
-            var img = ShareImage.Build(_st, PlayerProfile.TodayIndex, _st.IsDaily);
+            var shot = CaptureMaze();
+            var img = ShareImage.Build(_st, PlayerProfile.TodayIndex, _st.IsDaily, shot);
             ShareCard.ShareWithImage(ShareCard.Build(_st), img);
             if (_st.IsDaily) ShowDailyWin(); else ShowWin();
         }
