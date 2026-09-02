@@ -35,9 +35,22 @@ namespace ChalkMaze
             _src = gameObject.AddComponent<AudioSource>();
             _src.playOnAwake = false;
             _src.spatialBlend = 0f;
+            _src.volume = 1f;
+            _src.bypassEffects = true;
+            _src.ignoreListenerVolume = false;
 
             _rng = new System.Random(20260901);
             _bank = Bake();
+        }
+
+        /// 폰에서 원인을 읽기 위한 상태 요약. 화면에 띄운다.
+        public string Diagnose()
+        {
+            int listeners = Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None).Length;
+            var clip = _bank != null && _bank.TryGetValue(Sound.Step, out var a) && a.Length > 0 ? a[0] : null;
+            return $"리스너{listeners} · 소스{(_src != null ? "O" : "X")} · 음소거{(Muted ? "O" : "X")} · "
+                 + $"클립{(_bank?.Count ?? 0)} · {(clip != null ? clip.samples + "샘플" : "없음")} · "
+                 + $"출력{AudioSettings.outputSampleRate}Hz · 리스너볼륨{AudioListener.volume:F1}";
         }
 
         public bool Muted
@@ -53,7 +66,9 @@ namespace ChalkMaze
 
             // 발소리는 번갈아 재생해 기계적으로 들리지 않게 한다
             var clip = arr.Length == 1 ? arr[0] : arr[_stepFlip++ % arr.Length];
-            _src.PitchedOneShot(clip, volume, 1f + (float)(_rng.NextDouble() - 0.5) * 0.08f);
+            // 볼륨을 너무 낮추면 폰 스피커에서 안 들린다. 하한을 둔다.
+            _src.PitchedOneShot(clip, Mathf.Clamp(volume, 0.6f, 1f),
+                                1f + (float)(_rng.NextDouble() - 0.5) * 0.08f);
         }
 
         // ── 합성 ──────────────────────────────────────
@@ -85,7 +100,7 @@ namespace ChalkMaze
             Synth.LowPass(b, cutoff, cutoff * 0.45f);
             Synth.Shape(b, 0.02f, 34f);
             Synth.AddSine(b, 150f, 90f, 0.25f, 0.01f, 40f);
-            Synth.Normalize(b, 0.32f);
+            Synth.Normalize(b, 0.85f);
             Synth.FadeOut(b, 0.012f);
             return Synth.ToClip("step", b);
         }
@@ -98,7 +113,7 @@ namespace ChalkMaze
             Synth.LowPass(b, 340f, 140f);
             Synth.AddSine(b, 105f, 62f, 0.9f, 0.005f, 24f);
             Synth.Shape(b, 0.008f, 20f);
-            Synth.Normalize(b, 0.42f);
+            Synth.Normalize(b, 0.95f);
             Synth.FadeOut(b, 0.02f);
             return Synth.ToClip("bump", b);
         }
@@ -114,7 +129,7 @@ namespace ChalkMaze
             for (int i = 0; i < b.Length; i++)
                 b[i] *= 0.7f + 0.3f * Mathf.Sin(i * 0.011f);
             Synth.Shape(b, 0.06f, erase ? 16f : 9f);
-            Synth.Normalize(b, 0.26f);
+            Synth.Normalize(b, 0.75f);
             Synth.FadeOut(b, 0.02f);
             return Synth.ToClip("chalk", b);
         }
@@ -128,7 +143,7 @@ namespace ChalkMaze
             Synth.Shape(b, 0.03f, 5.5f);
             Synth.AddSine(b, 110f, 300f, 0.5f, 0.06f, 3.2f);
             Synth.AddSine(b, 220f, 600f, 0.22f, 0.06f, 3.6f);
-            Synth.Normalize(b, 0.55f);
+            Synth.Normalize(b, 0.95f);
             Synth.FadeOut(b, 0.15f);
             return Synth.ToClip("firelit", b);
         }
@@ -141,7 +156,7 @@ namespace ChalkMaze
             Synth.LowPass(b, 2600f, 180f);
             Synth.Shape(b, 0.02f, 4.2f);
             Synth.AddSine(b, 320f, 70f, 0.45f, 0.02f, 3.0f);
-            Synth.Normalize(b, 0.48f);
+            Synth.Normalize(b, 0.95f);
             Synth.FadeOut(b, 0.25f);
             return Synth.ToClip("torchout", b);
         }
@@ -157,7 +172,7 @@ namespace ChalkMaze
             Synth.AddSine(n2, bHz, bHz, 0.8f, 0.01f, 8f);
             for (int i = 0; i < half; i++) buf[i] = n1[i];
             for (int i = 0; i < n2.Length; i++) buf[half + i] += n2[i];
-            Synth.Normalize(buf, 0.38f);
+            Synth.Normalize(buf, 0.9f);
             Synth.FadeOut(buf, 0.02f);
             return Synth.ToClip("twotone", buf);
         }
@@ -172,7 +187,7 @@ namespace ChalkMaze
             Synth.Shape(b, 0.01f, 7f);
             Synth.AddSine(b, 95f, 42f, 1.1f, 0.004f, 8f);
             Synth.AddSine(b, 190f, 84f, 0.4f, 0.004f, 11f);
-            Synth.Normalize(b, 0.5f);
+            Synth.Normalize(b, 0.95f);
             Synth.FadeOut(b, 0.05f);
             return Synth.ToClip("dig", b);
         }
@@ -191,7 +206,7 @@ namespace ChalkMaze
                 Synth.AddSine(v, notes[n], notes[n], 0.7f, 0.02f, 3.4f);
                 for (int i = 0; i < len; i++) b[start + i] += v[i];
             }
-            Synth.Normalize(b, 0.42f);
+            Synth.Normalize(b, 0.95f);
             Synth.FadeOut(b, 0.12f);
             return Synth.ToClip("chord", b);
         }

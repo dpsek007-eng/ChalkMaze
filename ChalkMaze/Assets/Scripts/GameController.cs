@@ -28,6 +28,8 @@ namespace ChalkMaze
             Hud.OnDir     += TryMove;
             Hud.OnMark    += DoMark;
             Hud.OnUseItem += UseItem;
+            Hud.OnWatchForChalk += WatchForChalk;
+            Hud.OnWatchForItem  += WatchForItem;
 
             int streak = PlayerProfile.TouchStreak();
             string reward = PlayerProfile.ClaimStreakReward();
@@ -138,6 +140,42 @@ namespace ChalkMaze
             RefreshAll();
         }
 
+        /// 분필이 떨어졌을 때만 부른다. 필요한 순간에만 광고를 보여야 시청률이 나온다.
+        void WatchForChalk()
+        {
+            if (AdManager.I == null) return;
+            AdManager.I.ShowRewarded(AdSlot.MoreChalk, ok =>
+            {
+                if (ok)
+                {
+                    _st.GrantChalk(2);
+                    Sfx.I?.Play(Sound.Pickup);
+                    Hud.Toast("분필 +2", "이번 층에서 두 번 더 표시할 수 있습니다");
+                }
+                RefreshAll();
+            });
+        }
+
+        /// 아이템이 하나도 없을 때만 부른다. 아이템은 없어도 깰 수 있으므로
+        /// 광고로 묶어도 게임이 막히지 않는다. 하루 상한은 유지한다 —
+        /// 없으면 난이도가 '광고를 몇 편 참느냐'로 결정된다.
+        void WatchForItem()
+        {
+            if (AdManager.I == null || PlayerProfile.AdGrantsLeft <= 0) return;
+            AdManager.I.ShowRewarded(AdSlot.FreeItem, ok =>
+            {
+                if (ok)
+                {
+                    var got = ItemInfo.Roll(_rng);
+                    _st.Add(got);
+                    PlayerProfile.ConsumeAdGrant();
+                    Sfx.I?.Play(Sound.Pickup);
+                    Hud.Toast(ItemInfo.Name(got), ItemInfo.Hint(got));
+                }
+                RefreshAll();
+            });
+        }
+
         void UseItem(ItemKind k)
         {
             bool ok = k switch
@@ -217,7 +255,8 @@ namespace ChalkMaze
             });
 
             Overlay.Show($"전 {LevelConfig.FinalLevel}층", "분필 <color=#FF7A3D>미로</color>", body,
-                $"<color=#6E6875>연속 출석 {streak}일 · {reward}</color>",
+                $"<color=#6E6875>연속 출석 {streak}일 · {reward}</color>\n" +
+                $"<size=18><color=#6E6875>{(Sfx.I != null ? Sfx.I.Diagnose() : "소리 시스템 없음")}</color></size>",
                 choices.ToArray());
         }
 

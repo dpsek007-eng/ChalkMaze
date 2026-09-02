@@ -11,6 +11,8 @@ namespace ChalkMaze
         DoubleItem,     // 아이템 주움 → 하나 더
         FreeCompass,    // 길을 잃었을 때 → 출구 방향
         SupplyCache,    // 층 클리어 후 다음 층 보급품. 하루 상한이 있다.
+        MoreChalk,      // 분필이 떨어졌을 때만. 필요한 순간에만 노출한다.
+        FreeItem,       // 아이템이 하나도 없을 때만.
         LevelClear      // 층 클리어 전면광고 (N층마다)
     }
 
@@ -35,9 +37,13 @@ namespace ChalkMaze
             Init();
         }
 
+        bool _sdkOk;
+
         void Init()
         {
 #if CHALK_ADS
+          try
+          {
             if (AdIds.TestDeviceIds.Length > 0)
             {
                 GoogleMobileAds.Api.MobileAds.SetRequestConfiguration(
@@ -49,10 +55,19 @@ namespace ChalkMaze
 
             GoogleMobileAds.Api.MobileAds.Initialize(_ =>
             {
+                _sdkOk = true;
                 Debug.Log($"[Ads] 초기화 완료 — {(AdIds.UsingTestAds ? "테스트" : "실제")} 광고");
                 LoadRewarded();
                 LoadInterstitial();
             });
+          }
+          catch (System.Exception e)
+          {
+              // 광고 SDK 가 게임을 죽여서는 안 된다. 리눅스처럼 클라이언트가 없는
+              // 플랫폼에서는 초기화 자체가 실패한다.
+              _sdkOk = false;
+              Debug.LogWarning("[Ads] SDK 초기화 실패 — 광고 없이 진행합니다: " + e.Message);
+          }
 #else
             Debug.Log("[Ads] 스텁 모드 — SDK 미임포트. 리워드는 즉시 지급됩니다.");
 #endif
@@ -62,7 +77,9 @@ namespace ChalkMaze
         public void ShowRewarded(AdSlot slot, Action<bool> onDone)
         {
 #if CHALK_ADS
-            if (_rewarded != null && _rewarded.CanShowAd())
+          try
+          {
+            if (_sdkOk && _rewarded != null && _rewarded.CanShowAd())
             {
                 bool earned = false;
                 _rewarded.OnAdFullScreenContentClosed += () => { onDone?.Invoke(earned); LoadRewarded(); };
@@ -70,8 +87,14 @@ namespace ChalkMaze
                 return;
             }
             Debug.LogWarning("[Ads] 리워드 미준비 — 보상만 지급");
-            LoadRewarded();
+            if (_sdkOk) LoadRewarded();
             onDone?.Invoke(true);
+          }
+          catch (System.Exception e)
+          {
+              Debug.LogWarning("[Ads] 리워드 실패, 보상만 지급: " + e.Message);
+              onDone?.Invoke(true);
+          }
 #else
             Debug.Log($"[Ads] (스텁) 리워드 {slot}");
             onDone?.Invoke(true);
@@ -87,14 +110,22 @@ namespace ChalkMaze
             _clearsSinceInterstitial = 0;
 
 #if CHALK_ADS
-            if (_interstitial != null && _interstitial.CanShowAd())
+          try
+          {
+            if (_sdkOk && _interstitial != null && _interstitial.CanShowAd())
             {
                 _interstitial.OnAdFullScreenContentClosed += () => { onDone?.Invoke(); LoadInterstitial(); };
                 _interstitial.Show();
                 return;
             }
-            LoadInterstitial();
+            if (_sdkOk) LoadInterstitial();
             onDone?.Invoke();
+          }
+          catch (System.Exception e)
+          {
+              Debug.LogWarning("[Ads] 전면광고 실패: " + e.Message);
+              onDone?.Invoke();
+          }
 #else
             Debug.Log("[Ads] (스텁) 전면광고");
             onDone?.Invoke();
@@ -107,6 +138,7 @@ namespace ChalkMaze
 
         void LoadRewarded()
         {
+            if (!_sdkOk) return;
             _rewarded?.Destroy(); _rewarded = null;
             var req = new GoogleMobileAds.Api.AdRequest();
             GoogleMobileAds.Api.RewardedAd.Load(AdIds.Rewarded, req, (ad, err) =>
@@ -118,6 +150,7 @@ namespace ChalkMaze
 
         void LoadInterstitial()
         {
+            if (!_sdkOk) return;
             _interstitial?.Destroy(); _interstitial = null;
             var req = new GoogleMobileAds.Api.AdRequest();
             GoogleMobileAds.Api.InterstitialAd.Load(AdIds.Interstitial, req, (ad, err) =>

@@ -400,5 +400,9 @@ namespace ChalkMaze
         // ── 광고 보상 ─────────────────────────────────
         public void RefillFuel() => Fuel = Cfg.Fuel;
         public void GrantChalk(int extra) { var c = Cfg; c.Chalk += extra; Cfg = c; }
+
+        /// 분필을 다 썼고, 지금 선 칸에도 표식이 없다 = 더 찍고 싶어도 못 찍는 상태
+        public bool ChalkExhausted =>
+            Cfg.Chalk > 0 && Marks.Count >= Cfg.Chalk && !Marks.ContainsKey(Maze.Index(PlayerX, PlayerY));
     }
 }

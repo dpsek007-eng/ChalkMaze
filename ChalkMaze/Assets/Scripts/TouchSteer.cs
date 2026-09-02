@@ -20,9 +20,13 @@ namespace ChalkMaze
         const float FirstRepeat = 0.28f;   // 첫 반복까지
         const float RepeatRate  = 0.14f;   // 이후 간격
 
+        /// 손가락이 이만큼 움직이면 그 움직임의 방향으로 조향한다 (화면 짧은 변 비율).
+        const float SteerDelta = 0.035f;
+
         bool _holding;
         int _lastDir = -1;
         float _nextMove;
+        Vector2 _anchor;
 
         void Update()
         {
@@ -35,7 +39,8 @@ namespace ChalkMaze
                 if (overUi) { _holding = false; return; }
                 _holding = true;
                 _lastDir = -1;
-                Step(down, first: true);
+                _anchor = down;
+                Step(DirectionFrom(down), first: true);
                 return;
             }
 
@@ -43,8 +48,24 @@ namespace ChalkMaze
 
             if (InputProbe.PressHeld(out var now))
             {
+                // 손가락을 움직였으면 그 방향으로 즉시 꺾는다.
+                // 플레이어 기준 절대 방향만 쓰면, 위로 가던 손가락을 오른쪽으로 조금
+                // 옮겨도 45도를 넘기 전까지는 계속 '위'로 읽혀 답답하다.
+                Vector2 drag = now - _anchor;
+                float need = Mathf.Min(Screen.width, Screen.height) * SteerDelta;
+                if (drag.magnitude >= need)
+                {
+                    _anchor = now;
+                    Step(AxisOf(drag), first: false);
+                    return;
+                }
+
                 if (Time.time < _nextMove) return;
-                Step(now, first: false);
+
+                // 제자리에서 누르고 있으면 계속 같은 방향으로.
+                // 플레이어가 손가락 쪽으로 다가와 데드존에 들어가도 방향이 흔들리지 않는다.
+                int abs = DirectionFrom(now);
+                Step(abs >= 0 ? abs : _lastDir, first: false);
                 return;
             }
 
@@ -52,9 +73,8 @@ namespace ChalkMaze
             _lastDir = -1;
         }
 
-        void Step(Vector2 screenPos, bool first)
+        void Step(int dir, bool first)
         {
-            int dir = DirectionFrom(screenPos);
             if (dir < 0) return;
 
             // 방향이 바뀌면 반복 대기를 처음부터 — 꺾을 때 미끄러지지 않게
@@ -63,7 +83,13 @@ namespace ChalkMaze
             OnMove?.Invoke(dir);
         }
 
-        /// 누른 지점이 플레이어의 어느 쪽인가. 우세한 축 하나만 고른다.
+        /// 벡터의 우세한 축을 방향으로. 화면 y는 위가 +, 격자 y는 아래가 +.
+        static int AxisOf(Vector2 d)
+            => Mathf.Abs(d.x) > Mathf.Abs(d.y)
+                ? (d.x > 0 ? 1 : 3)
+                : (d.y > 0 ? 0 : 2);
+
+        /// 누른 지점이 플레이어의 어느 쪽인가.
         int DirectionFrom(Vector2 screenPos)
         {
             Vector2 origin = Cam != null && Player != null
@@ -73,11 +99,7 @@ namespace ChalkMaze
             Vector2 d = screenPos - origin;
             float dead = Mathf.Min(Screen.width, Screen.height) * DeadZone;
             if (d.magnitude < dead) return -1;
-
-            // 화면 y는 위가 +, 격자 y는 아래가 + 이므로 상하를 뒤집는다
-            return Mathf.Abs(d.x) > Mathf.Abs(d.y)
-                ? (d.x > 0 ? 1 : 3)
-                : (d.y > 0 ? 0 : 2);
+            return AxisOf(d);
         }
     }
 }

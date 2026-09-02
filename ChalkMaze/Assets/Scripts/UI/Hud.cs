@@ -11,6 +11,8 @@ namespace ChalkMaze
         public Action<int> OnDir;
         public Action<MarkKind> OnMark;
         public Action<ItemKind> OnUseItem;
+        public Action OnWatchForChalk;
+        public Action OnWatchForItem;
 
         Text _lv, _fuelNum, _toastBig, _toastSmall;
         Image _fuelFill;
@@ -20,7 +22,7 @@ namespace ChalkMaze
         readonly Dictionary<ItemKind, (RectTransform rt, Text label)> _itemBtns
             = new Dictionary<ItemKind, (RectTransform, Text)>();
 
-        Button _mkArrow, _mkCross;
+        Button _mkArrow, _mkCross, _chalkAd, _itemAd;
         float _toastUntil;
 
         public void Build(Transform canvas)
@@ -79,6 +81,14 @@ namespace ChalkMaze
                                    new Vector2(0f, 0f), new Vector2(0.485f, 1f));
             _mkCross = MakeMarkBtn(marks, "✕  막다른 길", MarkKind.DeadEnd,
                                    new Vector2(0.515f, 0f), new Vector2(1f, 1f));
+
+            // 분필이 떨어졌을 때만 이 버튼이 두 칸을 덮는다.
+            // 평소에는 숨어 있어야 광고가 방해가 되지 않는다.
+            _chalkAd = UIKit.Btn(marks, "▶  광고 보고 분필 +2", 26, Palette.Void, Palette.Fire,
+                                 () => OnWatchForChalk?.Invoke());
+            UIKit.At(_chalkAd.GetComponent<RectTransform>(),
+                     new Vector2(0f, 0f), new Vector2(1f, 1f), Vector2.zero, Vector2.zero);
+            _chalkAd.gameObject.SetActive(false);
         }
 
         Button MakeMarkBtn(Transform parent, string txt, MarkKind kind, Vector2 aMin, Vector2 aMax)
@@ -124,6 +134,33 @@ namespace ChalkMaze
                      i => st.Bonfires[i].Lit ? Palette.Fire : Palette.StoneLit);
             SyncDots(_pips, _pipRow, st.Cfg.Chalk, 18, 10,
                      i => i < st.Marks.Count ? Palette.StoneLit : Palette.Chalk, true);
+
+            // 아이템이 하나도 없으면 그 자리에 광고 버튼을 둔다.
+            // 가진 게 있을 때는 숨어 있어야 방해가 되지 않는다.
+            if (_itemAd == null)
+            {
+                _itemAd = UIKit.Btn(_itemRow, "▶  광고 보고 아이템 받기", 24,
+                                    Palette.Void, Palette.Fire, () => OnWatchForItem?.Invoke());
+                UIKit.At(_itemAd.GetComponent<RectTransform>(),
+                         new Vector2(0f, 0f), new Vector2(1f, 1f), Vector2.zero, Vector2.zero);
+            }
+            int held = 0;
+            foreach (var k in ItemInfo.All) held += st.Count(k);
+            bool noItems = st.Cfg.ItemsOn && held == 0
+                        && AdManager.I != null && !AdManager.I.AdsRemoved
+                        && PlayerProfile.AdGrantsLeft > 0;
+            _itemAd.gameObject.SetActive(noItems);
+            var lbl = _itemAd.GetComponentInChildren<Text>();
+            if (lbl != null) lbl.text = $"▶  광고 보고 아이템 받기 (오늘 {PlayerProfile.AdGrantsLeft}회)";
+
+            // 분필이 떨어졌으면 표식 버튼 자리를 광고 버튼이 덮는다
+            bool dry = st.ChalkExhausted && AdManager.I != null && !AdManager.I.AdsRemoved;
+            if (_chalkAd != null)
+            {
+                _chalkAd.gameObject.SetActive(dry);
+                _mkArrow.gameObject.SetActive(!dry);
+                _mkCross.gameObject.SetActive(!dry);
+            }
 
             RefreshItems(st);
         }
