@@ -1,9 +1,12 @@
 # 테스터 모집 키트 — 분필 미로
 
 **게시는 직접 하셔야 합니다.** 아래 글은 그대로 복사해 붙이면 됩니다.
-`옵트인_링크`와 `그룹_링크`만 실제 값으로 바꾸세요.
+`https://play.google.com/apps/testing/com.ijcompany.chalkmaze`와 `https://groups.google.com/g/chalkmaze-testers`만 실제 값으로 바꾸세요.
 
 ---
+
+> **2026-09-02 기준 ①~④ 완료.** 비공개 테스트 트랙이 살아 있고 링크가 채워져 있다.
+> 이제 ⑤ 게시만 하면 된다.
 
 ## 순서 — 이 순서가 아니면 막힙니다
 
@@ -77,8 +80,8 @@ https://groups.google.com → 그룹 만들기
   · 무료 / 오프라인 / 광고 있음(강제 시청 없음) / 57MB / Android 8.0 이상
 
 ■ 참여
-   1) 그룹 가입: 그룹_링크
-   2) 옵트인: 옵트인_링크
+   1) 그룹 가입: https://groups.google.com/g/chalkmaze-testers
+   2) 옵트인: https://play.google.com/apps/testing/com.ijcompany.chalkmaze
    3) Play 스토어에서 설치
 
 ■ 부탁
@@ -113,8 +116,8 @@ So it isn't "how well can you memorise" — it's "where do you spend your chalk"
   · Free / offline / contains ads (never forced) / 57MB / Android 8.0+
 
 ■ How to join
-   1) Join the group: 그룹_링크
-   2) Opt in: 옵트인_링크
+   1) Join the group: https://groups.google.com/g/chalkmaze-testers
+   2) Opt in: https://play.google.com/apps/testing/com.ijcompany.chalkmaze
    3) Install from Play Store
 
 ■ Ask
