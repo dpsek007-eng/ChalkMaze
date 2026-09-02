@@ -101,6 +101,58 @@ namespace ChalkMaze
             return Make(t);
         }
 
+        /// 앱 아이콘과 같은 상징 — 두 벽 사이의 화살표
+        public static Sprite Crest()
+        {
+            int W = 180, H = 180;
+            var t = new Texture2D(W, H, TextureFormat.RGBA32, false);
+            var px = new Color[W * H];
+            for (int i = 0; i < px.Length; i++) px[i] = new Color(1, 1, 1, 0);
+            t.SetPixels(px);
+
+            void Bar(int x0, int x1, int y0, int y1)
+            {
+                for (int y = y0; y <= y1; y++)
+                for (int x = x0; x <= x1; x++)
+                    if (x >= 0 && y >= 0 && x < W && y < H) t.SetPixel(x, y, Color.white);
+            }
+            Bar(30, 44, 34, 146);
+            Bar(136, 150, 34, 146);
+
+            // 위를 가리키는 갈매기꼴
+            for (int y = 60; y <= 150; y++)
+            {
+                float u = (150 - y) / 90f;                 // y=150 끝(뾰족), 아래로 넓어짐
+                float half = Mathf.Lerp(0f, 44f, u);
+                float inner = Mathf.Lerp(0f, 26f, u);
+                for (int x = 0; x < W; x++)
+                {
+                    float dx = Mathf.Abs(x - W / 2f);
+                    if (dx <= half && dx >= inner - 1f) t.SetPixel(x, y, Color.white);
+                }
+            }
+            t.filterMode = FilterMode.Bilinear; t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), 100);
+        }
+
+        /// 조이스틱 기준점을 나타내는 얇은 원
+        public static Sprite Ring()
+        {
+            int size = 128;
+            var t = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            var px = new Color[size * size];
+            float c = size / 2f, r = c - 6f, w = 3.5f;
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float d = Mathf.Sqrt((x - c) * (x - c) + (y - c) * (y - c));
+                float a = Mathf.Clamp01(1f - Mathf.Abs(d - r) / w);
+                px[y * size + x] = new Color(1, 1, 1, a);
+            }
+            t.SetPixels(px); t.filterMode = FilterMode.Bilinear; t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+        }
+
         public static Sprite Square()
         {
             var t = new Texture2D(8, 8, TextureFormat.RGBA32, false);

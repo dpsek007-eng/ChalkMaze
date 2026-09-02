@@ -270,6 +270,7 @@ namespace ChalkMaze
                 b.Lit = true; Bonfires[i] = b;
                 SpawnX = nx; SpawnY = ny;
                 Fuel = Cfg.Fuel;
+                GrantChalk(1);          // 불을 밝힌 값
                 return MoveResult.LitBonfire;
             }
 
@@ -403,6 +404,6 @@ namespace ChalkMaze
 
         /// 분필을 다 썼고, 지금 선 칸에도 표식이 없다 = 더 찍고 싶어도 못 찍는 상태
         public bool ChalkExhausted =>
-            Cfg.Chalk > 0 && Marks.Count >= Cfg.Chalk && !Marks.ContainsKey(Maze.Index(PlayerX, PlayerY));
+            Marks.Count >= Cfg.Chalk && !Marks.ContainsKey(Maze.Index(PlayerX, PlayerY));
     }
 }

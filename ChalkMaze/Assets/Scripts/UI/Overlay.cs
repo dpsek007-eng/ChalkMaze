@@ -9,6 +9,7 @@ namespace ChalkMaze
     {
         RectTransform _root, _btnCol;
         Text _eyebrow, _title, _body, _stats;
+        Image _crest;
         readonly List<Button> _buttons = new List<Button>();
 
         public bool IsOpen => _root.gameObject.activeSelf;
@@ -22,19 +23,34 @@ namespace ChalkMaze
             UIKit.At(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                      new Vector2(-420, -520), new Vector2(420, 520));
 
-            _eyebrow = UIKit.Label(card, "", 22, Palette.Ember, TextAnchor.UpperLeft);
-            UIKit.At(_eyebrow.rectTransform, new Vector2(0,1), new Vector2(1,1), new Vector2(0,-40), new Vector2(0,0));
+            // 게임의 상징(벽 사이의 화살표)을 얹는다. 글자만 있으면 문서처럼 보인다.
+            var crestGo = new GameObject("crest", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            crestGo.transform.SetParent(card, false);
+            _crest = crestGo.GetComponent<Image>();
+            _crest.sprite = ProcTex.Crest();
+            _crest.color = new Color(Palette.Chalk.r, Palette.Chalk.g, Palette.Chalk.b, 0.9f);
+            _crest.raycastTarget = false;
+            UIKit.At(_crest.rectTransform, new Vector2(0.5f,1), new Vector2(0.5f,1),
+                     new Vector2(-90, -196), new Vector2(90, -16));
 
-            _title = UIKit.Label(card, "", 68, Palette.Chalk, TextAnchor.UpperLeft);
-            UIKit.At(_title.rectTransform, new Vector2(0,1), new Vector2(1,1), new Vector2(0,-140), new Vector2(0,-50));
+            _eyebrow = UIKit.Label(card, "", 22, Palette.Ember, TextAnchor.UpperCenter);
+            UIKit.At(_eyebrow.rectTransform, new Vector2(0,1), new Vector2(1,1), new Vector2(0,-238), new Vector2(0,-204));
+
+            _title = UIKit.Label(card, "", 72, Palette.Chalk, TextAnchor.UpperCenter);
+            UIKit.At(_title.rectTransform, new Vector2(0,1), new Vector2(1,1), new Vector2(0,-336), new Vector2(0,-244));
             _title.supportRichText = true;
 
-            _body = UIKit.Label(card, "", 26, Palette.Ash, TextAnchor.UpperLeft);
-            UIKit.At(_body.rectTransform, new Vector2(0,0.42f), new Vector2(1,1), new Vector2(0,0), new Vector2(0,-160));
+            // 제목과 본문 사이 가는 선 — 문단이 떠다니지 않게 잡아 준다
+            var rule = UIKit.Box(card, new Color(Palette.StoneLit.r, Palette.StoneLit.g, Palette.StoneLit.b, 1f));
+            UIKit.At(rule.rectTransform, new Vector2(0.5f,1), new Vector2(0.5f,1),
+                     new Vector2(-70, -362), new Vector2(70, -360));
+
+            _body = UIKit.Label(card, "", 27, Palette.Ash, TextAnchor.UpperCenter);
+            UIKit.At(_body.rectTransform, new Vector2(0,0.40f), new Vector2(1,1), new Vector2(0,0), new Vector2(0,-392));
             _body.supportRichText = true;
 
-            _stats = UIKit.Label(card, "", 26, Palette.Chalk, TextAnchor.UpperLeft);
-            UIKit.At(_stats.rectTransform, new Vector2(0,0.30f), new Vector2(1,0.42f), Vector2.zero, Vector2.zero);
+            _stats = UIKit.Label(card, "", 24, Palette.Ash, TextAnchor.LowerCenter);
+            UIKit.At(_stats.rectTransform, new Vector2(0,0.29f), new Vector2(1,0.40f), Vector2.zero, Vector2.zero);
             _stats.supportRichText = true;
 
             _btnCol = UIKit.Empty(card, "Buttons");
@@ -79,7 +95,8 @@ namespace ChalkMaze
                 var img = b.GetComponent<Image>();
                 img.color = c.Primary ? Palette.Ember
                           : c.IsAd   ? new Color(Palette.Fire.r, Palette.Fire.g, Palette.Fire.b, 0.18f)
-                                     : new Color(Palette.StoneLit.r, Palette.StoneLit.g, Palette.StoneLit.b, 0.8f);
+                                     : new Color(Palette.StoneLit.r, Palette.StoneLit.g, Palette.StoneLit.b, 0.55f);
+                txt.alignment = TextAnchor.MiddleCenter;
 
                 b.onClick.RemoveAllListeners();
                 var pick = c.OnPick;

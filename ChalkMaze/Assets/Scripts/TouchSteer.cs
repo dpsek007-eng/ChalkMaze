@@ -3,34 +3,40 @@ using UnityEngine;
 
 namespace ChalkMaze
 {
-    /// 화면을 누른 지점이 플레이어의 어느 쪽인지 보고 그 방향으로 움직인다.
-    /// 누르고 있으면 계속 간다.
+    /// 손가락을 댄 자리가 기준점이 되고, 거기서 어느 쪽으로 밀었는지로 방향을 정한다.
+    /// 화면 어디에 대든 상관없다 — 엄지가 닿는 곳이 곧 조이스틱이다.
     ///
-    /// 스와이프는 손가락을 그어야 해서, 한 칸씩 조심스럽게 움직여야 하는
-    /// 이 게임과 맞지 않았다. 누르는 방식은 "가고 싶은 쪽을 가리킨다"에 가깝다.
+    /// 기준점을 걸음마다 옮기면 안 된다. 엄지는 직선이 아니라 호를 그리며 움직여서,
+    /// 오른쪽으로 밀어도 아래 성분이 계속 섞인다. 기준점이 따라오면 그 아래 성분이
+    /// 매번 새로 평가되어 방향이 아래로 새어버린다.
     public sealed class TouchSteer : MonoBehaviour
     {
         public Action<int> OnMove;
         public Camera Cam;
         public Transform Player;
 
-        /// 플레이어 주변 이 반경 안을 누르면 무시한다 (화면 짧은 변 기준 비율).
-        /// 없으면 손가락이 조금만 흔들려도 방향이 튄다.
-        const float DeadZone = 0.07f;
-        const float FirstRepeat = 0.28f;   // 첫 반복까지
-        const float RepeatRate  = 0.14f;   // 이후 간격
+        /// 기준점에서 이만큼 밀어야 방향이 잡힌다 (화면 짧은 변 비율)
+        const float DeadZone = 0.045f;
 
-        /// 손가락이 이만큼 움직이면 그 움직임의 방향으로 조향한다 (화면 짧은 변 비율).
-        const float SteerDelta = 0.035f;
+        /// 지금 가던 방향을 버리고 직각으로 꺾으려면 이 배수만큼 확실해야 한다.
+        /// 1 이면 45도에서 흔들린다. 엄지 호 때문에 방향이 새는 것을 막는다.
+        const float SwitchBias = 1.6f;
+
+        const float FirstRepeat = 0.26f;
+        const float RepeatRate  = 0.13f;
 
         bool _holding;
-        int _lastDir = -1;
+        int _dir = -1;
         float _nextMove;
         Vector2 _anchor;
 
+        /// 조이스틱 기준점 (화면 좌표). 표시용으로 밖에서 읽는다.
+        public bool Active => _holding && _dir >= 0;
+        public Vector2 Anchor => _anchor;
+        public int Direction => _dir;
+
         void Update()
         {
-            // UI 위를 누른 것은 버튼이 처리한다
             bool overUi = UnityEngine.EventSystems.EventSystem.current != null &&
                           UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
 
@@ -38,9 +44,9 @@ namespace ChalkMaze
             {
                 if (overUi) { _holding = false; return; }
                 _holding = true;
-                _lastDir = -1;
-                _anchor = down;
-                Step(DirectionFrom(down), first: true);
+                _anchor = down;          // 이번 터치 내내 고정
+                _dir = -1;
+                _nextMove = 0f;
                 return;
             }
 
@@ -48,58 +54,45 @@ namespace ChalkMaze
 
             if (InputProbe.PressHeld(out var now))
             {
-                // 손가락을 움직였으면 그 방향으로 즉시 꺾는다.
-                // 플레이어 기준 절대 방향만 쓰면, 위로 가던 손가락을 오른쪽으로 조금
-                // 옮겨도 45도를 넘기 전까지는 계속 '위'로 읽혀 답답하다.
-                Vector2 drag = now - _anchor;
-                float need = Mathf.Min(Screen.width, Screen.height) * SteerDelta;
-                if (drag.magnitude >= need)
-                {
-                    _anchor = now;
-                    Step(AxisOf(drag), first: false);
-                    return;
-                }
+                int want = Resolve(now - _anchor);
+                if (want < 0) return;               // 아직 데드존 안
 
+                if (want != _dir) { _dir = want; _nextMove = 0f; }   // 꺾으면 즉시 한 걸음
                 if (Time.time < _nextMove) return;
 
-                // 제자리에서 누르고 있으면 계속 같은 방향으로.
-                // 플레이어가 손가락 쪽으로 다가와 데드존에 들어가도 방향이 흔들리지 않는다.
-                int abs = DirectionFrom(now);
-                Step(abs >= 0 ? abs : _lastDir, first: false);
+                _nextMove = Time.time + (_nextMove == 0f ? FirstRepeat : RepeatRate);
+                OnMove?.Invoke(_dir);
                 return;
             }
 
             _holding = false;
-            _lastDir = -1;
+            _dir = -1;
         }
 
-        void Step(int dir, bool first)
+        /// 기준점에서 민 벡터를 방향으로. 지금 가던 방향에 관성을 준다.
+        int Resolve(Vector2 d)
         {
-            if (dir < 0) return;
-
-            // 방향이 바뀌면 반복 대기를 처음부터 — 꺾을 때 미끄러지지 않게
-            _nextMove = Time.time + (first || dir != _lastDir ? FirstRepeat : RepeatRate);
-            _lastDir = dir;
-            OnMove?.Invoke(dir);
-        }
-
-        /// 벡터의 우세한 축을 방향으로. 화면 y는 위가 +, 격자 y는 아래가 +.
-        static int AxisOf(Vector2 d)
-            => Mathf.Abs(d.x) > Mathf.Abs(d.y)
-                ? (d.x > 0 ? 1 : 3)
-                : (d.y > 0 ? 0 : 2);
-
-        /// 누른 지점이 플레이어의 어느 쪽인가.
-        int DirectionFrom(Vector2 screenPos)
-        {
-            Vector2 origin = Cam != null && Player != null
-                ? (Vector2)Cam.WorldToScreenPoint(Player.position)
-                : new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
-
-            Vector2 d = screenPos - origin;
             float dead = Mathf.Min(Screen.width, Screen.height) * DeadZone;
             if (d.magnitude < dead) return -1;
-            return AxisOf(d);
+
+            float ax = Mathf.Abs(d.x), ay = Mathf.Abs(d.y);
+            int horiz = d.x > 0 ? 1 : 3;
+            int vert  = d.y > 0 ? 0 : 2;   // 화면 y는 위가 +, 격자는 북이 0
+
+            if (_dir < 0) return ax > ay ? horiz : vert;   // 첫 판정은 단순 비교
+
+            bool goingHoriz = _dir == 1 || _dir == 3;
+            if (goingHoriz)
+            {
+                // 가로로 가는 중 — 세로로 꺾으려면 세로가 확실히 우세해야 한다
+                if (ay > ax * SwitchBias) return vert;
+                return horiz;
+            }
+            else
+            {
+                if (ax > ay * SwitchBias) return horiz;
+                return vert;
+            }
         }
     }
 }

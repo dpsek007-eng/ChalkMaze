@@ -82,6 +82,10 @@ namespace ChalkMaze
             steer.Player = glyphs.PlayerT;
             steer.OnMove += d => gc.TryMove(d);
 
+            var ind = canvasGo.AddComponent<SteerIndicator>();
+            ind.Steer = steer;
+            ind.Build(canvasGo.transform, ProcTex.Ring(), ProcTex.ArrowMark());
+
             // 개발용 자동 촬영 — 환경변수 CM_SHOT_DIR 이 있을 때만.
             // 실행 인자는 플레이어까지 안 넘어오는 경우가 있어 환경변수를 쓴다.
             var shotDir = System.Environment.GetEnvironmentVariable("CM_SHOT_DIR");

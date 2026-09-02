@@ -139,11 +139,12 @@ namespace ChalkMaze
             double ratio = 0.42 - 0.16 * t;
 
             // ── 분필 ──
+            // 표식을 마음껏 찍을 수 있으면 기억할 것이 남지 않는다.
+            // 분필은 기본으로 거의 주지 않고, 광고·아이템·화톳불로 벌게 한다.
             int chalk;
-            if (level <= 8)        chalk = 7 - (level - 1) / 2;
-            else if (level <= 60)  chalk = 3;
-            else if (level <= 250) chalk = 2;
-            else                   chalk = 1;
+            if (level <= 3)        chalk = 2;
+            else if (level <= 20)  chalk = 1;
+            else                   chalk = 0;
 
             // ── 화톳불 ──
             int fires = level < 40 ? 3 : level < 300 ? 2 : 1;

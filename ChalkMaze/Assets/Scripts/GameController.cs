@@ -243,21 +243,39 @@ namespace ChalkMaze
                 OnPick = () => { LoadLevel(1); RefreshAll(); }
             });
             choices.Add(new Overlay.Choice { Label = "규칙", OnPick = ShowRules });
-            choices.Add(new Overlay.Choice
-            {
-                Label = PlayerProfile.Muted ? "소리 켜기" : "소리 끄기",
-                OnPick = () =>
-                {
-                    PlayerProfile.Muted = !PlayerProfile.Muted;
-                    if (!PlayerProfile.Muted) Sfx.I?.Play(Sound.Pickup);
-                    ShowIntro(PlayerProfile.Streak, "");
-                }
-            });
+            choices.Add(new Overlay.Choice { Label = "설정", OnPick = ShowSettings });
 
             Overlay.Show($"전 {LevelConfig.FinalLevel}층", "분필 <color=#FF7A3D>미로</color>", body,
-                $"<color=#6E6875>연속 출석 {streak}일 · {reward}</color>\n" +
-                $"<size=18><color=#6E6875>{(Sfx.I != null ? Sfx.I.Diagnose() : "소리 시스템 없음")}</color></size>",
+                $"<color=#6E6875>연속 출석 {streak}일 · {reward}</color>",
                 choices.ToArray());
+        }
+
+        /// 설정 — 소리는 기본 켜짐. 끄고 싶은 사람만 들어온다.
+        void ShowSettings()
+        {
+            bool muted = PlayerProfile.Muted;
+            string body =
+                $"소리  <color=#E8E3D6>{(muted ? "꺼짐" : "켜짐")}</color>\n\n" +
+                $"최고 도달  <color=#E8E3D6>{Mathf.Max(1, PlayerProfile.BestLevel)}층</color>\n" +
+                $"연속 출석  <color=#E8E3D6>{PlayerProfile.Streak}일</color>\n" +
+                $"오늘 남은 광고 보상  <color=#E8E3D6>{PlayerProfile.AdGrantsLeft}회</color>\n\n" +
+                $"<size=19><color=#6E6875>{(Sfx.I != null ? Sfx.I.Diagnose() : "소리 시스템 없음")}</color></size>";
+
+            Overlay.Show("설정", muted ? "소리 <color=#FF7A3D>꺼짐</color>" : "소리 <color=#FF7A3D>켜짐</color>",
+                body, "",
+                new Overlay.Choice
+                {
+                    Label = muted ? "소리 켜기" : "소리 끄기",
+                    Primary = true,
+                    OnPick = () =>
+                    {
+                        PlayerProfile.Muted = !PlayerProfile.Muted;
+                        if (!PlayerProfile.Muted) Sfx.I?.Play(Sound.Pickup);
+                        ShowSettings();
+                    }
+                },
+                new Overlay.Choice { Label = "돌아가기",
+                                     OnPick = () => ShowIntro(PlayerProfile.Streak, "") });
         }
 
         /// 규칙은 원하는 사람만 본다. 강제로 읽히지 않는다.
