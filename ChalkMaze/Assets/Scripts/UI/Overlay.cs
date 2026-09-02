@@ -11,7 +11,7 @@ namespace ChalkMaze
         Text _eyebrow, _title, _body, _stats;
         Image _crest, _halo, _rule;
         Sprite _outline, _fill;
-        Button _gear, _help;
+        Button _gear, _help, _daily;
         RectTransform _descend;
         Image _chevron;
         Text _cta;
@@ -53,6 +53,15 @@ namespace ChalkMaze
             // 설정·규칙은 구석 아이콘으로 뺀다. 목록에 끼면 시작 버튼이 묻힌다.
             _gear = CornerBtn(_root, ProcTex.GearIcon(), new Vector2(1,1), new Vector2(-104,-104));
             _help = CornerBtn(_root, ProcTex.QuestionIcon(), new Vector2(1,1), new Vector2(-216,-104));
+
+            // 오늘의 미로 — 타이틀에서만 보이는 부차 진입로
+            _daily = UIKit.Btn(_root, "", 30, Palette.Chalk, new Color(0,0,0,0.001f), null);
+            var drt = _daily.GetComponent<RectTransform>();
+            drt.anchorMin = new Vector2(0.5f, 0); drt.anchorMax = new Vector2(0.5f, 0);
+            drt.pivot = new Vector2(0.5f, 0);
+            drt.anchoredPosition = new Vector2(0, 190);
+            drt.sizeDelta = new Vector2(620, 96);
+            _daily.gameObject.SetActive(false);
 
             var card = UIKit.Empty(_root, "Card");
             UIKit.At(card, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
@@ -137,6 +146,17 @@ namespace ChalkMaze
         }
 
         /// 구석 아이콘을 켜고 끈다. 시작 화면에서만 보인다.
+        /// 오늘의 미로 진입. 타이틀에서만 켠다.
+        public void SetDaily(string label, Action onPick)
+        {
+            _daily.gameObject.SetActive(onPick != null);
+            _daily.onClick.RemoveAllListeners();
+            if (onPick == null) return;
+            var t = _daily.GetComponentInChildren<Text>();
+            if (t != null) { t.text = label; t.color = Palette.Fire; }
+            _daily.onClick.AddListener(() => { Hide(); onPick(); });
+        }
+
         public void SetCorner(Action settings, Action rules)
         {
             _gear.gameObject.SetActive(settings != null);
@@ -159,6 +179,7 @@ namespace ChalkMaze
                          params Choice[] choices)
         {
             SetCorner(null, null);   // 기본은 숨김. 시작 화면만 따로 켠다.
+            _daily.gameObject.SetActive(false);
             _titleMode = false;
             _descend.gameObject.SetActive(false);
             _btnCol.gameObject.SetActive(true);

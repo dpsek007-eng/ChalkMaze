@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <cache-path name="cm_cache" path="." />
+    <external-cache-path name="cm_ext_cache" path="." />
+    <files-path name="cm_files" path="." />
+    <external-files-path name="cm_ext_files" path="." />
+</paths>

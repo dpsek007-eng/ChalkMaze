@@ -114,10 +114,27 @@ namespace ChalkMaze
         }
 
         // ══════════════════════════════════════════════
+        public bool IsDaily;
+
+        /// 오늘의 미로. 시드가 날짜에서 나오므로 누가 언제 켜도 같은 미로다.
+        public void LoadDaily(int dayIndex)
+        {
+            IsDaily = true;
+            Level = 0;
+            Cfg = LevelConfig.Daily(dayIndex);
+            BuildFrom(new System.Random(unchecked(dayIndex * 2654435761u).GetHashCode()));
+        }
+
         public void LoadLevel(int level, System.Random rng)
         {
+            IsDaily = false;
             Level = level;
             Cfg = LevelConfig.For(level);
+            BuildFrom(rng);
+        }
+
+        void BuildFrom(System.Random rng)
+        {
             Maze = new Maze(Cfg.Size, Cfg.Braid, rng);
 
             int n = Cfg.Size;

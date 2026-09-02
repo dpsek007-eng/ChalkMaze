@@ -87,9 +87,23 @@ namespace ChalkMaze
                 var p = CellCenter(b.X, b.Y);
                 if (b.Lit)
                 {
+                    // 등대이지 조명이 아니다. 크게 그리면 주변 일곱 칸이 밝아져
+                    // 횃불로 시야를 관리한다는 규칙 자체가 무의미해진다.
+                    // 멀리서 '저기 불빛이 있다'로만 읽히도록 작고 단단하게 둔다.
                     float pulse = 1f + Mathf.Sin(Time.time * 3.1f + b.X) * 0.09f;
-                    Take(_glow, p, new Color(Palette.Fire.r, Palette.Fire.g, Palette.Fire.b, 0.62f), 40, 3.4f * pulse);
-                    Take(_square, p, Palette.Fire, 41, 0.28f * pulse);
+
+                    // 가까이 있으면 시야가 이미 밝히므로 등대 역할이 필요 없다.
+                    // 멀수록 또렷하게, 가까울수록 옅게.
+                    float dist = Vector2.Distance(
+                        new Vector2(p.x, p.y),
+                        new Vector2(PlayerT.localPosition.x, PlayerT.localPosition.y));
+                    float far = Mathf.Clamp01((dist - 2.5f) / 6f);
+                    float a = 0.30f + 0.35f * far;
+
+                    Take(_glow, p, new Color(Palette.Fire.r, Palette.Fire.g, Palette.Fire.b, a * 0.55f),
+                         40, 1.25f * pulse);
+                    Take(_square, p, new Color(Palette.Fire.r, Palette.Fire.g, Palette.Fire.b, 0.55f + 0.45f * far),
+                         41, 0.24f * pulse);
                 }
                 else if (st.Visible.Contains(maze.Index(b.X, b.Y)))
                 {

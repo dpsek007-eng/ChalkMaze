@@ -97,6 +97,12 @@ namespace ChalkMaze
                 Debug.Log("[Bootstrap] 자동 촬영 활성");
             }
 
+            if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("CM_SHARE_DIR")))
+            {
+                var ss = gcGo.AddComponent<DebugShareShot>();
+                ss.GC = gc;
+            }
+
             Debug.Log($"[Bootstrap] 구성 완료 — 폰트 '{(UIKit.Font != null ? UIKit.Font.name : "없음")}' · "
                     + $"파이프라인 '{(UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline != null ? UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline.name : "Built-in")}'");
         }

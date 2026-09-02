@@ -47,6 +47,19 @@ namespace ChalkMaze
         public static bool DailyDoneToday => PlayerPrefs.GetInt(KDailyDone, -1) == TodayIndex;
         public static int  DailySteps     => PlayerPrefs.GetInt(KDailySteps, 0);
 
+        const string KDailyRuns = "cm.dailyRuns";
+        public static int DailyRuns => PlayerPrefs.GetInt(KDailyRuns, 0);
+
+        public static void RecordDaily(int steps, int runs)
+        {
+            // 오늘 이미 더 좋은 기록이 있으면 덮어쓰지 않는다
+            if (DailyDoneToday && DailySteps > 0 && DailySteps <= steps) return;
+            PlayerPrefs.SetInt(KDailyDone, TodayIndex);
+            PlayerPrefs.SetInt(KDailySteps, steps);
+            PlayerPrefs.SetInt(KDailyRuns, runs);
+            PlayerPrefs.Save();
+        }
+
         public static void RecordDaily(int steps)
         {
             PlayerPrefs.SetInt(KDailyDone, TodayIndex);

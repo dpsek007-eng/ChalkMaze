@@ -240,6 +240,23 @@ namespace ChalkMaze
                 () => { Hud.SetVisible(true); LoadLevel(resume ? _resumeLevel : 1); RefreshAll(); });
 
             Overlay.SetCorner(ShowSettings, ShowRules);
+            Overlay.SetDaily(PlayerProfile.DailyDoneToday
+                                ? $"오늘의 미로 · {PlayerProfile.DailySteps}걸음"
+                                : "오늘의 미로",
+                             StartDaily);
+        }
+
+        /// 오늘의 미로 — 날짜 하나로 전 세계가 같은 조건을 받는다.
+        /// 비교할 기준이 있어야 자랑이 성립한다.
+        void StartDaily()
+        {
+            Hud.SetVisible(true);
+            _st.LoadDaily(PlayerProfile.TodayIndex);
+            if (PlayerProfile.ChalkBonus > 0) _st.GrantChalk(PlayerProfile.ChalkBonus);
+            _st.BonusSight = PlayerProfile.LanternLevel;
+            Mesh.Build(_st.Maze);
+            RefreshAll();
+            Rig.SnapTo(Glyphs.PlayerT.position);
         }
 
         /// 설정 — 소리는 기본 켜짐. 끄고 싶은 사람만 들어온다.
@@ -301,6 +318,25 @@ namespace ChalkMaze
                         else { Restart(); }
                     }) },
                 new Overlay.Choice { Label = "다시 들어가기", Primary = true, OnPick = Restart });
+        }
+
+        void ShowDailyWin()
+        {
+            string stats = $"{_st.Steps}걸음 · {_st.Runs}회차 · 화톳불 {_st.FiresLit}/{_st.Bonfires.Count}";
+            Overlay.Show($"오늘의 미로 #{PlayerProfile.TodayIndex}",
+                "빠져나왔다",
+                "오늘은 전 세계가 같은 미로를 풉니다.\n결과를 공유해 보세요.",
+                stats,
+                new Overlay.Choice { Label = "결과 공유", Primary = true, OnPick = ShareResult },
+                new Overlay.Choice { Label = "돌아가기",
+                                     OnPick = () => ShowIntro(PlayerProfile.Streak, "") });
+        }
+
+        void ShareResult()
+        {
+            var img = ShareImage.Build(_st, PlayerProfile.TodayIndex, _st.IsDaily);
+            ShareCard.ShareWithImage(ShareCard.Build(_st), img);
+            if (_st.IsDaily) ShowDailyWin(); else ShowWin();
         }
 
         void Restart()

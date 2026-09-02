@@ -204,6 +204,36 @@ namespace ChalkMaze
             };
         }
 
+        /// 오늘의 미로 — 날짜 하나로 전 세계가 같은 조건을 받는다.
+        /// 층수와 무관하게 고정된 난이도라야 걸음 수를 비교할 수 있다.
+        public static LevelConfig Daily(int dayIndex)
+        {
+            // 규칙 하나가 날마다 돌아간다. 매일 같으면 이틀째부터 재미가 없다.
+            var pool = new[] { Mods.None, Mods.KeyLock, Mods.Reversed,
+                               Mods.Frugal, Mods.OneBonfire, Mods.FadingChalk, Mods.Blind };
+            var m = pool[((dayIndex % pool.Length) + pool.Length) % pool.Length];
+
+            int size = 15;
+            double ratio = (m & Mods.Frugal) != 0 ? 0.30 : 0.45;
+            int chalk = (m & Mods.NoChalk) != 0 ? 0 : 3;
+
+            return new LevelConfig
+            {
+                Size     = size,
+                Fuel     = (int)System.Math.Round(size * size * ratio),
+                Chalk    = chalk,
+                Braid    = (int)(size * 0.6f),
+                Bonfires = (m & Mods.OneBonfire) != 0 ? 1 : 2,
+                Sight    = (m & Mods.Blind) != 0 ? 1 : 3,
+                ItemsOn  = true,
+                PitsOn   = false,
+                Pickups  = 2,
+                Pits     = 0,
+                Mods     = m,
+                Chapter  = "오늘의 미로"
+            };
+        }
+
         /// 이 층에서 처음 등장하는 규칙 (안내 문구용)
         public static Mods NewIn(int level)
         {
