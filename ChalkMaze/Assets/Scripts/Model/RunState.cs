@@ -67,12 +67,26 @@ namespace ChalkMaze
         public const int LanternBoost = 3;
         public const int LanternDuration = 25;
 
+        public int OilSteps;
+        public const int OilBoost = 1;
+        public const int OilDuration = 30;
+
+        /// 횃불이 사그라들면 보이는 거리도 줄어든다.
+        /// 기름을 부으면 다시 넓어진다 — 불이 곧 시야라는 것이 손에 잡혀야 한다.
         public int SightRange
         {
             get
             {
                 int b = Cfg.Has(Mods.Blind) ? 1 : Cfg.Sight;
-                return b + BonusSight + (LanternSteps > 0 ? LanternBoost : 0);
+
+                float r = Cfg.Fuel > 0 ? (float)Fuel / Cfg.Fuel : 0f;
+                if (r < 0.15f) b -= 2;
+                else if (r < 0.40f) b -= 1;
+
+                b += BonusSight;
+                if (LanternSteps > 0) b += LanternBoost;
+                if (OilSteps > 0) b += OilBoost;
+                return Math.Max(1, b);
             }
         }
         public bool ExitLocked => Cfg.Has(Mods.KeyLock) && KeyPlaced && !HasKey;
@@ -222,6 +236,7 @@ namespace ChalkMaze
             LastDir = 2;
             CompassSteps = 0;
             LanternSteps = 0;
+            OilSteps = 0;
             Maze.ComputeVisible(PlayerX, PlayerY, Visible, SightRange);
         }
 
@@ -245,6 +260,7 @@ namespace ChalkMaze
             Steps++;
             if (CompassSteps > 0) CompassSteps--;
             if (LanternSteps > 0) LanternSteps--;
+            if (OilSteps > 0) OilSteps--;
             Maze.ComputeVisible(PlayerX, PlayerY, Visible, SightRange);
 
             ExpireChalk();
@@ -292,6 +308,8 @@ namespace ChalkMaze
         {
             if (!Spend(ItemKind.Oil)) return false;
             Fuel = Math.Min(Cfg.Fuel, Fuel + Cfg.Fuel / 2);
+            OilSteps = OilDuration;      // 불이 살아나 잠시 더 멀리 본다
+            Maze.ComputeVisible(PlayerX, PlayerY, Visible, SightRange);
             return true;
         }
 

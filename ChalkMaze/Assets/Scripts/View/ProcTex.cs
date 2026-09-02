@@ -101,6 +101,223 @@ namespace ChalkMaze
             return Make(t);
         }
 
+        // ── 아이콘 ───────────────────────────────────
+        // 버튼에 글자를 쓰면 서식 문서처럼 보인다. 게임은 그림으로 말해야 한다.
+
+        static void Rect(Texture2D t, float x0, float y0, float x1, float y1)
+        {
+            for (int y = Mathf.RoundToInt(y0); y <= Mathf.RoundToInt(y1); y++)
+            for (int x = Mathf.RoundToInt(x0); x <= Mathf.RoundToInt(x1); x++)
+                Plot(t, x, y, 1f);
+        }
+
+        static void Tri(Texture2D t, Vector2 a, Vector2 b, Vector2 c)
+        {
+            float minX = Mathf.Min(a.x, Mathf.Min(b.x, c.x)), maxX = Mathf.Max(a.x, Mathf.Max(b.x, c.x));
+            float minY = Mathf.Min(a.y, Mathf.Min(b.y, c.y)), maxY = Mathf.Max(a.y, Mathf.Max(b.y, c.y));
+            float Side(Vector2 p, Vector2 q, Vector2 r) => (q.x-p.x)*(r.y-p.y) - (q.y-p.y)*(r.x-p.x);
+            for (int y = (int)minY; y <= (int)maxY; y++)
+            for (int x = (int)minX; x <= (int)maxX; x++)
+            {
+                var p = new Vector2(x, y);
+                bool s1 = Side(a, b, p) >= 0, s2 = Side(b, c, p) >= 0, s3 = Side(c, a, p) >= 0;
+                if (s1 == s2 && s2 == s3) Plot(t, x, y, 1f);
+            }
+        }
+
+        static Sprite Finish(Texture2D t)
+        {
+            t.filterMode = FilterMode.Bilinear; t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(0.5f, 0.5f), 100);
+        }
+
+        /// 아이템 아이콘. 작게 줄여도 실루엣으로 구분되게 단순하게 그린다.
+        public static Sprite ItemIcon(ItemKind k)
+        {
+            int N = 96;
+            var t = Blank(N);
+            float c = N / 2f;
+
+            switch (k)
+            {
+                case ItemKind.Oil:      // 기름병 — 목이 좁은 병
+                    Rect(t, c - 8, 62, c + 8, 76);              // 목
+                    Rect(t, c - 13, 74, c + 13, 80);            // 마개
+                    Disc(t, c, 40, 22f, false, 0);              // 몸통
+                    Rect(t, c - 16, 40, c + 16, 64);
+                    break;
+
+                case ItemKind.Shovel:   // 삽 — 뾰족하면 방향 화살표로 읽힌다. 날을 각지게.
+                    Rect(t, c - 5, 44, c + 5, 80);              // 자루
+                    Rect(t, c - 16, 80, c + 16, 88);            // T자 손잡이
+                    Rect(t, c - 5, 72, c + 5, 88);
+                    Rect(t, c - 22, 20, c + 22, 44);            // 날 몸통
+                    Tri(t, new Vector2(c - 22, 20), new Vector2(c + 22, 20), new Vector2(c - 22, 8));
+                    Tri(t, new Vector2(c + 22, 20), new Vector2(c + 22, 8), new Vector2(c - 22, 8));
+                    break;
+
+                case ItemKind.Plank:    // 판자 — 결과 못을 파내야 널빤지로 읽힌다
+                    Rect(t, 10, 34, N - 10, 62);
+                    // 나뭇결 — 가로로 파낸다
+                    for (int gx = 16; gx < N - 16; gx += 3)
+                    {
+                        int gy = 44 + (int)(Mathf.Sin(gx * 0.22f) * 2f);
+                        t.SetPixel(gx, gy, new Color(1, 1, 1, 0));
+                        t.SetPixel(gx, gy + 8, new Color(1, 1, 1, 0));
+                    }
+                    // 못 구멍
+                    for (int y = 0; y < N; y++)
+                    for (int x = 0; x < N; x++)
+                    {
+                        float d1 = Mathf.Sqrt((x-24)*(x-24) + (y-48)*(y-48));
+                        float d2 = Mathf.Sqrt((x-(N-24))*(x-(N-24)) + (y-48)*(y-48));
+                        if (d1 < 4.5f || d2 < 4.5f) t.SetPixel(x, y, new Color(1, 1, 1, 0));
+                    }
+                    break;
+
+                case ItemKind.Thread:   // 아리아드네의 실 — 실패
+                    Rect(t, 26, 72, N - 26, 80);                // 위 테
+                    Rect(t, 26, 16, N - 26, 24);                // 아래 테
+                    Rect(t, c - 12, 24, c + 12, 72);            // 감긴 실
+                    for (int y = 28; y < 70; y += 8) Rect(t, c - 20, y, c + 20, y + 3);
+                    break;
+
+                case ItemKind.Compass:  // 나침반 — 원과 바늘
+                    Disc(t, c, c, 34f, true, 5f);
+                    Line(t, c - 14, c - 14, c + 14, c + 14, 4f);
+                    Disc(t, c, c, 6f, false, 0);
+                    break;
+
+                default:                // 랜턴 — 사다리꼴 등불
+                    Rect(t, c - 4, 78, c + 4, 86);              // 고리
+                    Disc(t, c, 86, 9f, true, 3.5f);
+                    Rect(t, c - 22, 68, c + 22, 76);            // 지붕
+                    Tri(t, new Vector2(c - 22, 68), new Vector2(c + 22, 68), new Vector2(c, 84));
+                    Rect(t, c - 17, 20, c + 17, 68);            // 몸통
+                    Rect(t, c - 24, 14, c + 24, 22);            // 받침
+                    break;
+            }
+            return Finish(t);
+        }
+
+        /// 톱니 — 설정
+        public static Sprite GearIcon()
+        {
+            int N = 96; var t = Blank(N); float c = N / 2f;
+            Disc(t, c, c, 30f, true, 9f);
+            // 사각 이빨이라야 톱니로 읽힌다. 둥근 점은 구슬 목걸이가 된다.
+            for (int i = 0; i < 8; i++)
+            {
+                float a = i * Mathf.PI / 4f;
+                float dx = Mathf.Cos(a), dy = Mathf.Sin(a);
+                for (float r = 26f; r <= 42f; r += 0.5f)
+                for (float w = -7f; w <= 7f; w += 0.5f)
+                {
+                    float x = c + dx * r - dy * w;
+                    float y = c + dy * r + dx * w;
+                    Plot(t, Mathf.RoundToInt(x), Mathf.RoundToInt(y), 1f);
+                }
+            }
+            for (int y = 0; y < N; y++)
+            for (int x = 0; x < N; x++)
+            {
+                float d = Mathf.Sqrt((x-c)*(x-c) + (y-c)*(y-c));
+                if (d < 11f) t.SetPixel(x, y, new Color(1,1,1,0));   // 가운데 구멍
+            }
+            return Finish(t);
+        }
+
+        /// 물음표 — 규칙
+        public static Sprite QuestionIcon()
+        {
+            int N = 96; var t = Blank(N); float c = N / 2f;
+            Disc(t, c, 66, 20f, true, 7f);
+            for (int y = 0; y < 50; y++)
+            for (int x = 0; x < N; x++)
+                if (y > 46) t.SetPixel(x, y, t.GetPixel(x, y));
+            Rect(t, c - 4, 34, c + 4, 52);
+            Disc(t, c, 22, 6f, false, 0);
+            // 원의 아래 절반을 지워 갈고리 모양으로
+            for (int y = 0; y < 62; y++)
+            for (int x = 0; x < (int)c; x++)
+            {
+                float d = Mathf.Sqrt((x-c)*(x-c) + (y-66)*(y-66));
+                if (d > 12f && d < 28f) t.SetPixel(x, y, new Color(1,1,1,0));
+            }
+            return Finish(t);
+        }
+
+        /// 분필로 그은 듯 흔들리는 가로선. 반듯한 사각형은 문서처럼 보인다.
+        public static Sprite ChalkRule()
+        {
+            int W = 256, H = 24;
+            var t = new Texture2D(W, H, TextureFormat.RGBA32, false);
+            var px = new Color[W * H];
+            for (int i = 0; i < px.Length; i++) px[i] = new Color(1, 1, 1, 0);
+            t.SetPixels(px);
+
+            float mid = H / 2f;
+            for (int x = 0; x < W; x++)
+            {
+                // 손이 흔들린 만큼 위아래로 떨고, 끝으로 갈수록 옅어진다
+                float wobble = Mathf.Sin(x * 0.09f) * 1.6f + Mathf.Sin(x * 0.31f) * 0.9f;
+                float edge = Mathf.Clamp01(Mathf.Min(x, W - 1 - x) / 46f);
+                float grain = 0.72f + 0.28f * Mathf.Sin(x * 0.77f);
+                for (int dy = -2; dy <= 2; dy++)
+                {
+                    int y = Mathf.RoundToInt(mid + wobble) + dy;
+                    if (y < 0 || y >= H) continue;
+                    float a = (1f - Mathf.Abs(dy) / 2.6f) * edge * grain;
+                    if (a > 0) t.SetPixel(x, y, new Color(1, 1, 1, a));
+                }
+            }
+            t.filterMode = FilterMode.Bilinear; t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), 100);
+        }
+
+        /// 속이 찬 둥근 사각형. 주 버튼용. 각진 사각형은 혼자 튄다.
+        public static Sprite RectFill()
+        {
+            int S2 = 48, r = 12;
+            var t = new Texture2D(S2, S2, TextureFormat.RGBA32, false);
+            for (int y = 0; y < S2; y++)
+            for (int x = 0; x < S2; x++)
+            {
+                float dx = Mathf.Max(Mathf.Abs(x - (S2 - 1) / 2f) - ((S2 - 1) / 2f - r), 0);
+                float dy = Mathf.Max(Mathf.Abs(y - (S2 - 1) / 2f) - ((S2 - 1) / 2f - r), 0);
+                float d = Mathf.Sqrt(dx * dx + dy * dy) - r;
+                t.SetPixel(x, y, new Color(1, 1, 1, Mathf.Clamp01(0.5f - d)));
+            }
+            t.filterMode = FilterMode.Bilinear; t.Apply();
+            return Sprite.Create(t, new Rect(0, 0, S2, S2), new Vector2(0.5f, 0.5f), 100,
+                                 0, SpriteMeshType.FullRect, new Vector4(r + 2, r + 2, r + 2, r + 2));
+        }
+
+        /// 테두리만 있는 둥근 사각형. 9-슬라이스로 늘려 쓴다.
+        public static Sprite RectOutline()
+        {
+            int S2 = 48, r = 12, w = 3;
+            var t = new Texture2D(S2, S2, TextureFormat.RGBA32, false);
+            var px = new Color[S2 * S2];
+            for (int i = 0; i < px.Length; i++) px[i] = new Color(1, 1, 1, 0);
+            t.SetPixels(px);
+
+            for (int y = 0; y < S2; y++)
+            for (int x = 0; x < S2; x++)
+            {
+                // 둥근 사각형까지의 거리
+                float dx = Mathf.Max(Mathf.Abs(x - (S2 - 1) / 2f) - ((S2 - 1) / 2f - r), 0);
+                float dy = Mathf.Max(Mathf.Abs(y - (S2 - 1) / 2f) - ((S2 - 1) / 2f - r), 0);
+                float d = Mathf.Sqrt(dx * dx + dy * dy) - r;
+                float a = Mathf.Clamp01(1f - Mathf.Abs(d + w * 0.5f) / (w * 0.5f));
+                if (a > 0) t.SetPixel(x, y, new Color(1, 1, 1, a));
+            }
+            t.filterMode = FilterMode.Bilinear; t.Apply();
+            var sp = Sprite.Create(t, new Rect(0, 0, S2, S2), new Vector2(0.5f, 0.5f), 100,
+                                   0, SpriteMeshType.FullRect, new Vector4(r + w, r + w, r + w, r + w));
+            return sp;
+        }
+
         /// 앱 아이콘과 같은 상징 — 두 벽 사이의 화살표
         public static Sprite Crest()
         {

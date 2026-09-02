@@ -77,9 +77,13 @@ namespace ChalkMaze
             var marks = UIKit.Empty(canvas, "Marks");
             UIKit.At(marks, new Vector2(0, 0), new Vector2(1, 0), new Vector2(36, 212), new Vector2(-36, 344));
 
-            _mkArrow = MakeMarkBtn(marks, "↑  지나간 방향", MarkKind.Arrow,
+            _panels.Add(top.gameObject);
+            _panels.Add(_itemRow.gameObject);
+            _panels.Add(marks.gameObject);
+
+            _mkArrow = MakeMarkBtn(marks, "지나간 방향", MarkKind.Arrow,
                                    new Vector2(0f, 0f), new Vector2(0.485f, 1f));
-            _mkCross = MakeMarkBtn(marks, "✕  막다른 길", MarkKind.DeadEnd,
+            _mkCross = MakeMarkBtn(marks, "막다른 길", MarkKind.DeadEnd,
                                    new Vector2(0.515f, 0f), new Vector2(1f, 1f));
 
             // 분필이 떨어졌을 때만 이 버튼이 두 칸을 덮는다.
@@ -87,17 +91,48 @@ namespace ChalkMaze
             _chalkAd = UIKit.Btn(marks, "▶  광고 보고 분필 +2", 26, Palette.Void, Palette.Fire,
                                  () => OnWatchForChalk?.Invoke());
             UIKit.At(_chalkAd.GetComponent<RectTransform>(),
-                     new Vector2(0f, 0f), new Vector2(1f, 1f), Vector2.zero, Vector2.zero);
+                     new Vector2(0.06f, 0.16f), new Vector2(0.94f, 0.84f), Vector2.zero, Vector2.zero);
             _chalkAd.gameObject.SetActive(false);
         }
 
-        Button MakeMarkBtn(Transform parent, string txt, MarkKind kind, Vector2 aMin, Vector2 aMax)
+        /// 글자 대신 그림. 버튼에 문장을 쓰면 서식 문서처럼 보인다.
+        Button MakeMarkBtn(Transform parent, string caption, MarkKind kind, Vector2 aMin, Vector2 aMax)
         {
-            var b = UIKit.Btn(parent, txt, 24, Palette.Chalk,
-                              new Color(Palette.StoneLit.r, Palette.StoneLit.g, Palette.StoneLit.b, 0.55f),
+            // 상자를 두르면 서식 폼처럼 보인다. 아이콘만 띄우고 터치 영역만 남긴다.
+            var b = UIKit.Btn(parent, "", 24, Palette.Chalk,
+                              new Color(0, 0, 0, 0.001f),
                               () => OnMark?.Invoke(kind));
-            UIKit.At(b.GetComponent<RectTransform>(), aMin, aMax, Vector2.zero, Vector2.zero);
+            var rt = b.GetComponent<RectTransform>();
+            UIKit.At(rt, aMin, aMax, Vector2.zero, Vector2.zero);
+
+            var icon = Icon(rt, kind == MarkKind.Arrow ? ProcTex.ArrowMark() : ProcTex.CrossMark(),
+                            Palette.Chalk, 74f, new Vector2(0, 20));
+            var cap = UIKit.Label(rt, caption, 21, Palette.Ash, TextAnchor.LowerCenter);
+            UIKit.At(cap.rectTransform, new Vector2(0,0), new Vector2(1,0), new Vector2(0,10), new Vector2(0,34));
             return b;
+        }
+
+        static Image Icon(Transform parent, Sprite sp, Color c, float size, Vector2 offset)
+        {
+            var go = new GameObject("icon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            go.transform.SetParent(parent, false);
+            var img = go.GetComponent<Image>();
+            img.sprite = sp; img.color = c; img.raycastTarget = false;
+            img.preserveAspect = true;
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(size, size);
+            rt.anchoredPosition = offset;
+            return img;
+        }
+
+        readonly System.Collections.Generic.List<GameObject> _panels =
+            new System.Collections.Generic.List<GameObject>();
+
+        /// 타이틀 화면에서는 게임 UI 가 비치면 안 된다.
+        public void SetVisible(bool on)
+        {
+            foreach (var g in _panels) if (g != null) g.SetActive(on);
         }
 
         public void Toast(string big, string small)
@@ -209,25 +244,25 @@ namespace ChalkMaze
                 {
                     var kind = k;
                     var b = UIKit.Btn(_itemRow, "", 22, Palette.Chalk,
-                                      new Color(Palette.StoneLit.r, Palette.StoneLit.g, Palette.StoneLit.b, 0.6f),
+                                      new Color(0, 0, 0, 0.001f),
                                       () => OnUseItem?.Invoke(kind));
                     var rt = b.GetComponent<RectTransform>();
-                    var lbl = b.GetComponentInChildren<Text>();
+                    Icon(rt, ProcTex.ItemIcon(kind), Palette.Chalk, 58f, new Vector2(-18, 0));
+                    // 개수는 오른쪽 아래 작게
+                    var lbl = UIKit.Label(rt, "", 26, Palette.Chalk, TextAnchor.MiddleRight);
+                    UIKit.At(lbl.rectTransform, new Vector2(0.5f,0), new Vector2(1,1), new Vector2(0,0), new Vector2(-14,0));
                     e = (rt, lbl);
                     _itemBtns[k] = e;
                 }
                 e.rt.gameObject.SetActive(active);
                 if (!active) continue;
 
-                string label = k == ItemKind.Thread && st.ThreadSet
-                    ? "실 · 귀환"
-                    : $"{ItemInfo.Name(k)} {c}";
-                e.label.text = label;
+                e.label.text = k == ItemKind.Thread && st.ThreadSet ? "귀환" : $"{c}";
 
                 e.rt.anchorMin = new Vector2(0, 0); e.rt.anchorMax = new Vector2(0, 1);
                 e.rt.pivot = new Vector2(0, 0.5f);
-                e.rt.anchoredPosition = new Vector2(shown * 210, 0);
-                e.rt.sizeDelta = new Vector2(196, 0);
+                e.rt.anchoredPosition = new Vector2(shown * 146, 0);
+                e.rt.sizeDelta = new Vector2(132, 0);
                 shown++;
             }
         }

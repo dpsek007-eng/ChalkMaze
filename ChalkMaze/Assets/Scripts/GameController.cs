@@ -202,6 +202,7 @@ namespace ChalkMaze
             if (k == ItemKind.Thread) Hud.Toast(_st.ThreadSet ? "매듭을 묶었다" : "실을 따라 돌아왔다", "");
             if (k == ItemKind.Compass) Hud.Toast("나침반", "12걸음 동안 출구 방향이 보인다");
             if (k == ItemKind.Lantern) Hud.Toast("랜턴", $"{RunState.LanternDuration}걸음 동안 시야 +{RunState.LanternBoost}");
+            if (k == ItemKind.Oil) Hud.Toast("기름을 부었다", $"횃불이 살아나고 {RunState.OilDuration}걸음 동안 시야가 넓어진다");
             RefreshAll();
         }
 
@@ -228,31 +229,23 @@ namespace ChalkMaze
                 // 누르는 조작은 보고 알 수 없다. 한 줄로 알려준다.
                 "<color=#6E6875>가고 싶은 쪽을 누르세요. 누르고 있으면 계속 갑니다.</color>";
 
-            var choices = new System.Collections.Generic.List<Overlay.Choice>();
-            if (_resumeLevel > 1)
-                choices.Add(new Overlay.Choice
-                {
-                    Label = $"{_resumeLevel}층부터 이어하기",
-                    Primary = true,
-                    OnPick = () => LoadLevel(_resumeLevel)
-                });
-            choices.Add(new Overlay.Choice
-            {
-                Label = _resumeLevel > 1 ? "1층부터 다시" : "내려가기",
-                Primary = _resumeLevel <= 1,
-                OnPick = () => { LoadLevel(1); RefreshAll(); }
-            });
-            choices.Add(new Overlay.Choice { Label = "규칙", OnPick = ShowRules });
-            choices.Add(new Overlay.Choice { Label = "설정", OnPick = ShowSettings });
-
-            Overlay.Show($"전 {LevelConfig.FinalLevel}층", "분필 <color=#FF7A3D>미로</color>", body,
+            bool resume = _resumeLevel > 1;
+            Hud.SetVisible(false);
+            Overlay.ShowTitle(
+                $"전 {LevelConfig.FinalLevel}층",
+                "분필 <color=#FF7A3D>미로</color>",
+                body,
                 $"<color=#6E6875>연속 출석 {streak}일 · {reward}</color>",
-                choices.ToArray());
+                resume ? $"{_resumeLevel}층으로 내려가기" : "내려가기",
+                () => { Hud.SetVisible(true); LoadLevel(resume ? _resumeLevel : 1); RefreshAll(); });
+
+            Overlay.SetCorner(ShowSettings, ShowRules);
         }
 
         /// 설정 — 소리는 기본 켜짐. 끄고 싶은 사람만 들어온다.
         void ShowSettings()
         {
+            Hud.SetVisible(false);
             bool muted = PlayerProfile.Muted;
             string body =
                 $"소리  <color=#E8E3D6>{(muted ? "꺼짐" : "켜짐")}</color>\n\n" +
@@ -281,6 +274,7 @@ namespace ChalkMaze
         /// 규칙은 원하는 사람만 본다. 강제로 읽히지 않는다.
         void ShowRules()
         {
+            Hud.SetVisible(false);
             string body =
                 "<color=#F2A33C>화톳불</color>  밝히면 여기서 부활한다. 횃불도 가득 찬다.\n" +
                 "어둠 너머에서도 보인다.\n\n" +

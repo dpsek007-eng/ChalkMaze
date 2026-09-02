@@ -72,3 +72,6 @@ compare.png
 
 # 효과음 미리듣기 (코드에서 재생성 가능)
 /sfx-preview/
+
+# PC 미리보기 빌드 (재생성 가능)
+/preview/
