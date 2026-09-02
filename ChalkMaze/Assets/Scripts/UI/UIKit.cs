@@ -66,7 +66,11 @@ namespace ChalkMaze
         {
             var rt = Panel(parent, "btn", bg);
             var b = rt.gameObject.AddComponent<Button>();
-            b.targetGraphic = rt.GetComponent<Image>();
+            var g = rt.GetComponent<Image>();
+            // 버튼은 배경이 투명하더라도 반드시 터치를 받아야 한다.
+            // Panel 은 알파가 낮으면 레이캐스트를 끄므로 여기서 되살린다.
+            g.raycastTarget = true;
+            b.targetGraphic = g;
             var l = Label(rt, txt, size, fg, TextAnchor.MiddleCenter);
             Stretch(l.rectTransform);
             if (onClick != null) b.onClick.AddListener(() => onClick());

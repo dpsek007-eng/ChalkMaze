@@ -251,8 +251,7 @@ namespace ChalkMaze
                 $"소리  <color=#E8E3D6>{(muted ? "꺼짐" : "켜짐")}</color>\n\n" +
                 $"최고 도달  <color=#E8E3D6>{Mathf.Max(1, PlayerProfile.BestLevel)}층</color>\n" +
                 $"연속 출석  <color=#E8E3D6>{PlayerProfile.Streak}일</color>\n" +
-                $"오늘 남은 광고 보상  <color=#E8E3D6>{PlayerProfile.AdGrantsLeft}회</color>\n\n" +
-                $"<size=19><color=#6E6875>{(Sfx.I != null ? Sfx.I.Diagnose() : "소리 시스템 없음")}</color></size>";
+                $"오늘 남은 광고 보상  <color=#E8E3D6>{PlayerProfile.AdGrantsLeft}회</color>";
 
             Overlay.Show("설정", muted ? "소리 <color=#FF7A3D>꺼짐</color>" : "소리 <color=#FF7A3D>켜짐</color>",
                 body, "",
